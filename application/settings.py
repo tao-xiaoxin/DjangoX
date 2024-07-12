@@ -231,82 +231,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 # }
 
 # 日志配置（基本跟原生的TimedRotatingFileHandler一样）
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': True,
-#     'formatters': {
-#         'standard': {
-#             'format': '[%(asctime)s] [%(filename)s:%(lineno)d] [%(module)s:%(funcName)s] '
-#                       '[%(levelamne)s]- %(message)s'
-#             # 'format': config.LOG_FORMAT
-#         },
-#         'simple': {  # 简单格式
-#             'format': '%(levelname)s %(message)s'
-#         },
-#     },
-#     'handlers': {
-#         'servers': {
-#             'class': 'utils.logs.LoguruBaseRotatingHandler',  # 这个路径看你本地放在哪里(下面的log文件)
-#             'filename': os.path.join(LOG_DIR, 'srap.log'),
-#             'when': "D",
-#             'interval': 1,
-#             'backupCount': 1,
-#             'formatter': 'standard',
-#             'encoding': 'utf-8',
-#         },
-#         'db': {
-#             'class': 'utils.logs.LoguruBaseRotatingHandler',  # 这个路径看你本地放在哪里
-#             'filename': os.path.join(LOG_DIR, 'srap_db.log'),
-#             'when': "D",
-#             'interval': 1,
-#             'backupCount': 1,
-#             'formatter': 'standard',
-#             'encoding': 'utf-8',
-#             'logging_levels': ['debug']  # 注意这里，这是自定义类多了一个参数，因为我只想让db日志有debug文件，所以我只看sql，这个可以自己设置
-#         }
-#     },
-#     'loggers': {
-#         # Django全局绑定
-#         'django': {
-#             'handlers': ['servers'],
-#             'propagate': True,
-#             'level': "INFO"
-#         },
-#         'celery': {
-#             'handlers': ['servers'],
-#             'propagate': False,
-#             'level': "INFO"
-#         },
-#         'django.db.backends': {
-#             'handlers': ['db'],
-#             'propagate': False,
-#             'level': "DEBUG"
-#         },
-#         'django.request': {
-#             'handlers': ['servers'],
-#             'propagate': False,
-#             'level': "DEBUG"
-#         },
-#     }
-# }
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'loguru': {
-            'level': 'INFO',  # Ensure this is a valid log level
-            'class': 'utils.logs.LoguruBaseRotatingHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/loguru.log'),
-        },
-    },
-    'loggers': {
-        '': {  # This configures the root logger
-            'handlers': ['loguru'],
-            'level': 'INFO',  # Ensure this is a valid log level
-            'propagate': True,
-        },
-    },
-}
+os.makedirs(os.path.join(BASE_DIR, "logs"), mode=0o775, exist_ok=True)
 
 LOG_CLASS = "utils.logs.LoguruBaseRotatingHandler"
 LOGFILTER = "utils.logs.LevelFilter"
@@ -314,6 +239,107 @@ LOGFILTER = "utils.logs.LevelFilter"
 max_bytes = 1024_000
 # log file count
 backup_count = 10
+os.makedirs(os.path.join(BASE_DIR, "logs"), mode=0o775, exist_ok=True)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "generic": {
+            "format": "[%(process)d] [%(thread)d] [%(asctime)s] [%(name)s:%(lineno)d] [%(module)s:%(funcName)s] [%(levelname)s]- %(message)s",
+            # 打日志的格式
+            "datefmt": "%Y-%m-%d %H:%M:%S %z",  # 时间显示方法
+            "class": "logging.Formatter"
+        },
+    },
+    "filters": {
+        "error_filter": {"()": LOGFILTER, "level": logging.ERROR},
+        "warn_filter": {"()": LOGFILTER, "level": logging.WARN},
+        "info_filter": {"()": LOGFILTER, "level": logging.INFO},
+        "debug_filter": {"()": LOGFILTER, "level": logging.DEBUG},
+    },
+    "handlers": {
+        "error": {
+            "level": "ERROR",
+            "class": LOG_CLASS,
+            "formatter": "generic",
+            "filters": ["error_filter"],
+            "filename": os.path.join(BASE_DIR, "logs/error.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
+        },
+        "warn": {
+            "level": "WARNING",
+            "class": LOG_CLASS,
+            "formatter": "generic",
+            "filters": ["warn_filter"],
+            "filename": os.path.join(BASE_DIR, "logs/warn.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
+        },
+        "info": {
+            "level": "INFO",
+            "class": LOG_CLASS,
+            "formatter": "generic",
+            "filters": ["info_filter"],
+            "filename": os.path.join(BASE_DIR, "logs/info.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
+        },
+        "debug": {
+            "level": "DEBUG",
+            "class": LOG_CLASS,
+            "formatter": "generic",
+            "filters": ["debug_filter"],
+            "filename": os.path.join(BASE_DIR, "logs/debug.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
+        },
+        # 控制台输出
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "generic"},
+    },
+    "loggers": {
+        "gunicorn.error": {
+            "level": "ERROR",
+            "handlers": ["error"],
+            "propagate": True,
+            "qualname": "gunicorn.error",
+        },
+        "gunicorn.access": {
+            "level": "DEBUG",
+            "handlers": ["debug"],
+            "propagate": False,
+            "qualname": "gunicorn.access",
+        },
+        "django": {"handlers": ["error", "warn", "info", "debug"], "level": "INFO", "propagate": True},
+        "uvicorn": {
+            "handlers": ["warn", "info", "debug", "error"],
+            "propagate": True,
+            "level": "INFO",
+        },
+        "uvicorn.error": {"level": "ERROR", "handlers": ["error"], "propagate": True},
+        "uvicorn.access": {"handlers": ["info"], "level": "INFO", "propagate": False},
+        "celery.task": {"handlers": ["error", "warn", "info", "debug"], "level": "DEBUG", "propagate": True},
+    },
+}
+
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'loguru': {
+#             'level': 'INFO',  # Ensure this is a valid log level
+#             'class': 'utils.logs.LoguruBaseRotatingHandler',
+#             'filename': os.path.join(BASE_DIR, 'logs/loguru.log'),
+#         },
+#     },
+#     'loggers': {
+#         '': {  # This configures the root logger
+#             'handlers': ['loguru'],
+#             'level': 'INFO',  # Ensure this is a valid log level
+#             'propagate': True,
+#         },
+#     },
+# }
 
 # ================================================= #
 # **************** 验证码配置  ******************* #
