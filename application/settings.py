@@ -9,13 +9,15 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
+import logging
+import os, sys
 from pathlib import Path
+from configs.config import *
+from configs import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
+sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -27,7 +29,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -37,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'user.apps.UserConfig',
+    "apps.user",
 ]
 
 MIDDLEWARE = [
@@ -55,8 +56,7 @@ ROOT_URLCONF = 'application.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -71,7 +71,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'application.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -81,7 +80,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -101,7 +99,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -111,7 +108,7 @@ TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
-USE_TZ = False #设置为中国时间
+USE_TZ = False  # 设置为中国时间
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -122,3 +119,243 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ================================================= #
+# ********************* 日志配置 ******************* #
+# ================================================= #
+
+# This adopts a hierarchical logging method, that is, the low-level log file will record all the logs of the higher level than him, so that the low-level logs can be the most abundant, and the high-level logs are fewer and more critical
+# debug
+# logger.add(config.lOG_FOLDER + "debug.log", level="DEBUG", backtrace=config.LOG_BACKTRACE, diagnose=config.LOG_DIAGNOSE,
+#            format=config.LOG_FORMAT, colorize=False,
+#            rotation=config.LOG_ROTATION, retention=config.LOG_RETENTION, encoding=config.LOG_ENCODING,
+#            filter=lambda record: record["level"].no >= logger.level("DEBUG").no)
+#
+# # info
+# logger.add(config.lOG_FOLDER + "info.log", level="INFO", backtrace=config.LOG_BACKTRACE, diagnose=config.LOG_DIAGNOSE,
+#            format=config.LOG_FORMAT, colorize=False,
+#            rotation=config.LOG_ROTATION, retention=config.LOG_RETENTION, encoding=config.LOG_ENCODING,
+#            filter=lambda record: record["level"].no >= logger.level("INFO").no)
+#
+# # warning
+# logger.add(config.lOG_FOLDER + "warning.log", level="WARNING", backtrace=config.LOG_BACKTRACE,
+#            diagnose=config.LOG_DIAGNOSE,
+#            format=config.LOG_FORMAT, colorize=False,
+#            rotation=config.LOG_ROTATION, retention=config.LOG_RETENTION, encoding=config.LOG_ENCODING,
+#            filter=lambda record: record["level"].no >= logger.level("WARNING").no)
+#
+# # error
+# logger.add(config.lOG_FOLDER + "error.log", level="ERROR", backtrace=config.LOG_BACKTRACE, diagnose=config.LOG_DIAGNOSE,
+#            format=config.LOG_FORMAT, colorize=False,
+#            rotation=config.LOG_ROTATION, retention=config.LOG_RETENTION, encoding=config.LOG_ENCODING,
+#            filter=lambda record: record["level"].no >= logger.level("ERROR").no)
+#
+# # critical
+# logger.add(config.lOG_FOLDER + "critical.log", level="CRITICAL", backtrace=config.LOG_BACKTRACE,
+#            diagnose=config.LOG_DIAGNOSE,
+#            format=config.LOG_FORMAT, colorize=False,
+#            rotation=config.LOG_ROTATION, retention=config.LOG_RETENTION, encoding=config.LOG_ENCODING,
+#            filter=lambda record: record["level"].no >= logger.level("CRITICAL").no)
+#
+# logger.add(sys.stderr, level="CRITICAL", backtrace=config.LOG_BACKTRACE, diagnose=config.LOG_DIAGNOSE,
+#            format=config.LOG_FORMAT, colorize=True,
+#            filter=lambda record: record["level"].no >= logger.level("CRITICAL").no)
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+#
+# STANDARD_LOG_FORMAT = '[%(asctime)s][%(name)s.%(funcName)s():%(lineno)d] [%(levelname)s] %(message)s'
+# CONSOLE_LOG_FORMAT = '[%(asctime)s][%(name)s.%(funcName)s():%(lineno)d] [%(levelname)s] %(message)s'
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'standard': {
+#             'format': STANDARD_LOG_FORMAT
+#         },
+#         'console': {
+#             'format': CONSOLE_LOG_FORMAT,
+#             'datefmt': '%Y-%m-%d %H:%M:%S',
+#         },
+#         'file': {
+#             'format': CONSOLE_LOG_FORMAT,
+#             'datefmt': '%Y-%m-%d %H:%M:%S',
+#         },
+#     },
+#     'handlers': {
+#         'file': {
+#             'level': 'INFO',
+#             'class': 'logging.handlers.RotatingFileHandler',
+#             'filename': os.path.join(LOG_DIR, 'server.log'),
+#             'maxBytes': 1024 * 1024 * 10,  # 10 MB
+#             'backupCount': 10,  # 最多备份10个
+#             'formatter': 'standard',
+#             'encoding': 'utf-8',
+#         },
+#         'error': {
+#             'level': 'ERROR',
+#             'class': 'logging.handlers.RotatingFileHandler',
+#             'filename': os.path.join(LOG_DIR, 'error.log'),
+#             'maxBytes': 1024 * 1024 * 10,  # 10 MB
+#             'backupCount': 10,  # 最多备份10个
+#             'formatter': 'standard',
+#             'encoding': 'utf-8',
+#         },
+#         'console': {
+#             'level': 'INFO',
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'console',
+#         }
+#     },
+#     'loggers': {
+#         # default日志
+#         '': {
+#             'handlers': ['console', 'error', 'file'],
+#             'level': 'INFO',
+#         },
+#         'django': {
+#             'handlers': ['console', 'error', 'file'],
+#             'level': 'INFO',
+#             "propagate": False,  # 不向上级 logger 传播
+#         },
+#         'scripts': {
+#             'handlers': ['console', 'error', 'file'],
+#             'level': 'INFO',
+#         },
+#         # 数据库相关日志
+#         'django.db.backends': {
+#             'handlers': ["console", "error", "file"],
+#             'propagate': False,
+#             'level': 'INFO',
+#         },
+#     }
+# }
+
+# 日志配置（基本跟原生的TimedRotatingFileHandler一样）
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': True,
+#     'formatters': {
+#         'standard': {
+#             'format': '[%(asctime)s] [%(filename)s:%(lineno)d] [%(module)s:%(funcName)s] '
+#                       '[%(levelamne)s]- %(message)s'
+#             # 'format': config.LOG_FORMAT
+#         },
+#         'simple': {  # 简单格式
+#             'format': '%(levelname)s %(message)s'
+#         },
+#     },
+#     'handlers': {
+#         'servers': {
+#             'class': 'utils.logs.LoguruBaseRotatingHandler',  # 这个路径看你本地放在哪里(下面的log文件)
+#             'filename': os.path.join(LOG_DIR, 'srap.log'),
+#             'when': "D",
+#             'interval': 1,
+#             'backupCount': 1,
+#             'formatter': 'standard',
+#             'encoding': 'utf-8',
+#         },
+#         'db': {
+#             'class': 'utils.logs.LoguruBaseRotatingHandler',  # 这个路径看你本地放在哪里
+#             'filename': os.path.join(LOG_DIR, 'srap_db.log'),
+#             'when': "D",
+#             'interval': 1,
+#             'backupCount': 1,
+#             'formatter': 'standard',
+#             'encoding': 'utf-8',
+#             'logging_levels': ['debug']  # 注意这里，这是自定义类多了一个参数，因为我只想让db日志有debug文件，所以我只看sql，这个可以自己设置
+#         }
+#     },
+#     'loggers': {
+#         # Django全局绑定
+#         'django': {
+#             'handlers': ['servers'],
+#             'propagate': True,
+#             'level': "INFO"
+#         },
+#         'celery': {
+#             'handlers': ['servers'],
+#             'propagate': False,
+#             'level': "INFO"
+#         },
+#         'django.db.backends': {
+#             'handlers': ['db'],
+#             'propagate': False,
+#             'level': "DEBUG"
+#         },
+#         'django.request': {
+#             'handlers': ['servers'],
+#             'propagate': False,
+#             'level': "DEBUG"
+#         },
+#     }
+# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'loguru': {
+            'level': 'INFO',  # Ensure this is a valid log level
+            'class': 'utils.logs.LoguruBaseRotatingHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/loguru.log'),
+        },
+    },
+    'loggers': {
+        '': {  # This configures the root logger
+            'handlers': ['loguru'],
+            'level': 'INFO',  # Ensure this is a valid log level
+            'propagate': True,
+        },
+    },
+}
+
+LOG_CLASS = "utils.logs.LoguruBaseRotatingHandler"
+LOGFILTER = "utils.logs.LevelFilter"
+# log file size
+max_bytes = 1024_000
+# log file count
+backup_count = 10
+
+# ================================================= #
+# **************** 验证码配置  ******************* #
+# ================================================= #
+
+
+CAPTCHA_STATE = True
+CAPTCHA_IMAGE_SIZE = (160, 60)  # 设置 captcha 图片大小
+CAPTCHA_LENGTH = 4  # 字符个数
+CAPTCHA_TIMEOUT = 1  # 超时(minutes)
+CAPTCHA_OUTPUT_FORMAT = '%(image)s %(text_field)s %(hidden_field)s '
+CAPTCHA_FONT_SIZE = 42  # 字体大小
+CAPTCHA_FOREGROUND_COLOR = '#409eff'  # 前景色
+CAPTCHA_BACKGROUND_COLOR = '#FFFFFF'  # 背景色
+CAPTCHA_NOISE_FUNCTIONS = (
+    'captcha.helpers.noise_arcs',  # 线
+    # 'captcha.helpers.noise_dots', # 点
+)
+# CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.random_char_challenge' #字母验证码
+CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'  # 加减乘除验证码
+
+# ================================================= #
+# ******************** celery配置 ******************** #
+# ================================================= #
+CELERY_TIMEZONE = 'Asia/Shanghai'  # celery 时区问题
+CELERY_BROKER_URL = f'{REDIS_URL}/10'  # Broker配置，使用Redis作为消息中间件(无密码)
+# CELERY_BROKER_URL = 'redis://lybbn:{}@127.0.0.1:6379/10'.format('123456')  #lybbn 代表 账号（没有可省略）  {} 存放密码  127.0.0.1连接的 ip  6379端口  10 redis库
+# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/11' # 把任务结果存在了Redis
+CELERY_RESULT_BACKEND = 'django-db'  # celery结果存储到数据库中django-db
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'  # Backend数据库
+CELERY_RESULT_PERSISTENT = True
+CELERY_RESULT_EXTENDED = True
+DJANGO_CELERY_BEAT_TZ_AWARE = False
+CELERY_ENABLE_UTC = False
+BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}  # 连接超时
+CELERY_TASK_SERIALIZER = 'json'  # 任务序列化和反序列化使json
+CELERY_RESULT_SERIALIZER = 'json'
+# CELERYD_CONCURRENCY = 2  #并发worker数量
+CELERY_WORKER_CONCURRENCY = 2  # 并发数
+CELERYD_FORCE_EXECV = True  # 防止死锁,应确保为True
+CELERY_TASK_TIME_LIMIT = 60 * 30 * 5  # 限制celery任务执行时间，# 单个任务的运行时间限制，否则会被杀死
+CELERYD_MAX_TASKS_PER_CHILD = 100  # worker执行100个任务自动销毁，防止内存泄露
+CELERYD_TASK_SOFT_TIME_LIMIT = 6000  # 单个任务的运行时间不超过此值(秒)，否则会抛出(SoftTimeLimitExceeded)异常停止任务
+CELERY_DISABLE_RATE_LIMITS = True  # 即使任务设置了明确的速率限制，也禁用所有速率限制。
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # 去除celery6.0启动时warning警告，确保在启动时进行代理连接重试

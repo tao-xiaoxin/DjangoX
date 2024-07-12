@@ -42,6 +42,7 @@ Djangox is a Django-based project template designed to kickstart your Django web
 2. Navigate to the project directory:
    ```
    cd DjangoX
+   cp configs/.env.example configs/.env
    ```
 3. Install the required packages:
    ```
