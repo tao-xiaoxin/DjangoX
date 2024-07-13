@@ -122,182 +122,120 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ================================================= #
 # ********************* 日志配置 ******************* #
 # ================================================= #
-
-# This adopts a hierarchical logging method, that is, the low-level log file will record all the logs of the higher level than him, so that the low-level logs can be the most abundant, and the high-level logs are fewer and more critical
-LOG_DIR = os.path.join(BASE_DIR, 'logs')
-os.makedirs(LOG_DIR, exist_ok=True)
-# 日志配置（基本跟原生的TimedRotatingFileHandler一样）
-os.makedirs(os.path.join(BASE_DIR, "logs"), mode=0o775, exist_ok=True)
-
+LOG_DIR = os.path.join(BASE_DIR, LOG_FOLDER)
+os.makedirs(LOG_DIR, mode=0o775, exist_ok=True)
 LOG_CLASS = "utils.logs.LoguruBaseRotatingHandler"
 LOGFILTER = "utils.logs.LevelFilter"
-# STANDARD_LOG_FORMAT = '[%(asctime)s][%(name)s.%(funcName)s():%(lineno)d] [%(levelname)s] %(message)s'
-# CONSOLE_LOG_FORMAT = '[%(asctime)s][%(name)s.%(funcName)s():%(lineno)d] [%(levelname)s] %(message)s'
-# LOG_FORMAT = '[{time:YYYY-MM-DD HH:mm:ss.SSS}] | [{level}] | [{name}:{function}:{line}] - [{message}]'
-# critical
-# logger.add(config.lOG_FOLDER + "critical.log", level="CRITICAL", backtrace=config.LOG_BACKTRACE,
-#            diagnose=config.LOG_DIAGNOSE,
-#            format=config.LOG_FORMAT, colorize=False,
-#            rotation=config.LOG_ROTATION, retention=config.LOG_RETENTION, encoding=config.LOG_ENCODING,
-#            filter=lambda record: record["level"].no >= logger.level("CRITICAL").no)
-#
-# logger.add(sys.stderr, level="CRITICAL", backtrace=config.LOG_BACKTRACE, diagnose=config.LOG_DIAGNOSE,
-#            format=config.LOG_FORMAT, colorize=True,
-#            filter=lambda record: record["level"].no >= logger.level("CRITICAL").no)
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     # 自定义的日志格式
-#     'formatter': {
-#         'standard': {
-#             'formats': LOG_FORMAT
-#         },
-#     },
-#     'handlers': {
-#         'file': {
-#             'level': 'INFO',
-#             'class': 'utils.logs.LoguruBaseRotatingHandler',
-#             'filename': os.path.join(LOG_DIR, 'server.log'),
-#             'maxBytes': 1024 * 1024 * 10,  # 10 MB
-#             'backupCount': 10,  # 最多备份10个
-#             'formatters': 'standard',
-#             'encoding': 'utf-8',
-#             'use_loguru': True,  # 使用 Loguru 日志模式
-#             "retention": LOG_RETENTION,
-#             "rotation": LOG_ROTATION
-#         },
-#         'error': {
-#             'level': 'ERROR',
-#             'class': 'utils.logs.LoguruBaseRotatingHandler',
-#             'filename': os.path.join(LOG_DIR, 'error.log'),
-#             'maxBytes': 1024 * 1024 * 10,  # 10 MB
-#             'backupCount': 10,  # 最多备份10个
-#             'formatters': 'standard',
-#             'encoding': 'utf-8',
-#             'use_loguru': True,  # 使用 Loguru 日志模式
-#             "retention": LOG_RETENTION
-#         },
-#         "warning": {
-#             "level": "WARNING",
-#             "class": "utils.logs.LoguruBaseRotatingHandler",
-#             "filename": os.path.join(LOG_DIR, "warning.log"),
-#             "maxBytes": 1024 * 1024 * 10,  # 10 MB
-#             "backupCount": 10,  # 最多备份10个
-#             "formatters": "standard",
-#             "encoding": "utf-8",
-#             'use_loguru': True,  # 使用 Loguru 日志模式
-#             "retention": LOG_RETENTION
-#         },
-#         "debug": {
-#             "level": "DEBUG",
-#             "class": "utils.logs.LoguruBaseRotatingHandler",
-#             "filename": os.path.join(LOG_DIR, "debug.log"),
-#             "maxBytes": 1024 * 1024 * 10,  # 10 MB
-#             "backupCount": 10,  # 最多备份10个
-#             "formatters": "standard",
-#             "encoding": "utf-8",
-#             'use_loguru': True,  # 使用 Loguru 日志模式
-#         },
-#         "critical": {
-#             "level": "CRITICAL",
-#             "class": "utils.logs.LoguruBaseRotatingHandler",
-#             "filename": os.path.join(LOG_DIR, "critical.log"),
-#             "maxBytes": 1024 * 1024 * 10,  # 10 MB
-#             "backupCount": 10,  # 最多备份10个
-#             "formatters": "standard",
-#             "encoding": "utf-8",
-#             'use_loguru': True,  # 使用 Loguru 日志模式
-#             "retention": LOG_RETENTION
-#         },
-#         # 'console': {
-#         #     'level': 'INFO',
-#         #     'class': 'logging.StreamHandler',
-#         #     # 'formatter': 'console',
-#         # },
-#     },
-#     'loggers': {
-#         # default日志
-#         '': {
-#             # 'handlers': ['error', 'file', 'warning', 'debug', 'critical','console', ],
-#             'handlers': ['error', 'file', 'warning', 'debug', 'critical'],
-#             'level': 'INFO',
-#         },
-#         "django": {
-#             "handlers": ['error', 'file', 'warning', 'debug', 'critical'],
-#             "level": "INFO",
-#             "propagate": False,  # 不向上级 logger 传播
-#         },
-#         'scripts': {
-#             'handlers': ['error', 'file', 'warning', 'debug', 'critical'],
-#             'level': 'INFO',
-#         },
-#         # 数据库相关日志
-#         'django.db.backends': {
-#             'handlers': ['error', 'file', 'warning', 'debug', 'critical'],
-#             'propagate': False,
-#             'level': 'INFO',
-#         },
-#     }
-# }
-
-
-# 日志配置（基本跟原生的TimedRotatingFileHandler一样）
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': True,
-    'formatters': {
-        'standard': {
-            'format': "[%(process)d] [%(thread)d] [%(asctime)s] [%(name)s:%(lineno)d] [%(module)s:%(funcName)s] [%(levelname)s]- %(message)s",
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": LOG_FORMAT,
             # 打日志的格式
             "datefmt": "%Y-%m-%d %H:%M:%S %z",  # 时间显示方法
+            # "class": "logging.Formatter"
         },
         'simple': {  # 简单格式
             'format': '%(levelname)s %(message)s'
         },
     },
-    'handlers': {
-        'servers': {
-            'class': 'utils.logs.InterceptTimedRotatingFileHandler',  # 这个路径看你本地放在哪里(下面的log文件)
-            'filename': os.path.join(LOG_DIR, 'srap.log'),
-            # 'interval': 1,
-            # 'backupCount': 1,
-            'formatter': 'standard',
-            'encoding': 'utf-8',
-        },
-        'db': {
-            'class': 'utils.logs.InterceptTimedRotatingFileHandler',  # 这个路径看你本地放在哪里
-            'filename': os.path.join(LOG_DIR, 'srap_db.log'),
-            # 'interval': 1,
-            # 'backupCount': 1,
-            'formatter': 'standard',
-            'encoding': 'utf-8',
-            # 'logging_levels': ['debug']  # 注意这里，这是自定义类多了一个参数，因为我只想让db日志有debug文件，所以我只看sql，这个可以自己设置
-        }
+    # 这里是定义过滤器，需要注意的是，由于 'filters' 是 logging.config.dictConfig 方法要求在配置字典中必须给订的 key ,所以即使不使用过滤器也需要明确给出一个空的结构。
+    "filters": {
+        "error_filter": {"()": LOGFILTER, "level": logging.ERROR},
+        "warn_filter": {"()": LOGFILTER, "level": logging.WARN},
+        "info_filter": {"()": LOGFILTER, "level": logging.INFO},
+        "debug_filter": {"()": LOGFILTER, "level": logging.DEBUG},
     },
-    'loggers': {
-        # Django全局绑定
-        'django': {
-            'handlers': ['servers'],
-            'propagate': True,
-            'level': "INFO"
+    "handlers": {
+        "error": {
+            "level": "ERROR",
+            "class": LOG_CLASS,
+            "formatter": "standard",
+            "filters": ["error_filter"],
+            "filename": os.path.join(LOG_DIR, "error.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
         },
-        'celery': {
-            'handlers': ['servers'],
-            'propagate': False,
-            'level': "INFO"
+        "warning": {
+            "level": "WARNING",
+            "class": LOG_CLASS,
+            "formatter": "standard",
+            "filters": ["warn_filter"],
+            "filename": os.path.join(LOG_DIR, "warn.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
         },
+        "info": {
+            "level": "INFO",
+            "class": LOG_CLASS,
+            "formatter": "standard",
+            "filters": ["info_filter"],
+            "filename": os.path.join(LOG_DIR, "info.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
+        },
+        "debug": {
+            "level": "DEBUG",
+            "class": LOG_CLASS,
+            "formatter": "standard",
+            "filters": ["debug_filter"],
+            "filename": os.path.join(LOG_DIR, "debug.log"),
+            "maxBytes": max_bytes,
+            "backupCount": backup_count,
+        },
+        # 控制台输出
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "standard"},
+    },
+    "loggers": {
+        "gunicorn.error": {
+            "level": "ERROR",
+            "handlers": ["error"],
+            "propagate": True,
+            "qualname": "gunicorn.error",
+        },
+        "gunicorn.access": {
+            "level": "DEBUG",
+            "handlers": ["debug"],
+            "propagate": False,
+            "qualname": "gunicorn.access",
+        },
+        "django": {
+            "handlers": ["info", "warning", "debug", "error", ],
+            "level": "INFO",
+            "propagate": True
+        },
+        "uvicorn": {
+            "handlers": ["info", "warning", "debug", "error", ],
+            "propagate": True,
+            "level": "INFO",
+        },
+        "uvicorn.error": {
+            "level": "ERROR",
+            "handlers": ["error"],
+            "propagate": True
+        },
+        "uvicorn.access": {
+            "handlers": ["info"],
+            "level": "INFO",
+            "propagate": False},
+        "celery.task": {
+            "handlers": ["info", "warning", "debug", "error", ],
+            "level": "DEBUG",
+            "propagate": True
+        },
+        # 数据库相关日志
         'django.db.backends': {
-            'handlers': ['db'],
+            'handlers': ["info", "warning", "debug", "error", ],
             'propagate': False,
-            'level': "CRITICAL"
+            'level': 'INFO',
         },
-        'django.request': {
-            'handlers': ['servers'],
-            'propagate': False,
-            'level': "DEBUG"
-        },
-    }
+    },
 }
+
+# 使用自定义日志输出反射到默认logging上
+# 如果是需要使用logging 替换为默认的日志输出则需要
+LOGGING_CONFIG = "utils.logs.simple_log_injector"
 
 # ================================================= #
 # **************** 验证码配置  ******************* #

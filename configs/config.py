@@ -48,12 +48,11 @@ DOMAIN_HOST = os.getenv('DOMAIN_HOST', "http://127.0.0.1:8000")
 # ================================================= #
 # **************   日志基本 配置  ************** #
 # ================================================= #
-lOG_FOLDER = "logs/"
-LOG_ROTATION = "100 MB"
-LOG_RETENTION = "30 days"
-LOG_ENCODING = "utf-8"
-LOG_BACKTRACE = True
-LOG_DIAGNOSE = True
-LOG_FORMAT = '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> ' \
-             '| <magenta>{process}</magenta>:<yellow>{thread}</yellow> ' \
-             '| <cyan>{name}</cyan>:<cyan>{function}</cyan>:<yellow>{line}</yellow> - <level>{message}</level>'
+# log 文件夹
+LOG_FOLDER = os.getenv('LOG_FOLDER', 'logs')
+LOG_FORMAT = os.getenv('LOG_FORMAT', '%(levelname)s %(asctime)s [%(threadName)s:%(thread)d] [%(name)s:%(lineno)d]'
+                                     '[%(module)s:%(funcName)s] [%(levelname)s]- %(message)s')
+# log file size,日志文件的最大值,这里我们设置300M
+max_bytes = eval(os.getenv('LOG_MAX_BYTES', "1024 * 1024 * 300"))
+# 备份份数
+backup_count = os.getenv('LOG_BACKUP_COUNT', 10)
