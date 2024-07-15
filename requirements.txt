@@ -1,10 +1,13 @@
 --trusted-host pypi.tuna.tsinghua.edu.cn -i https://pypi.tuna.tsinghua.edu.cn/simple
 Django
-djangorestframework
 django-cors-headers
 django-filter
+django-ranged-response
 django-redis
 django-simple-captcha
+djangorestframework
 djangorestframework-simplejwt
+drf-yasg
 python-dotenv
 loguru
+PyMySQL
