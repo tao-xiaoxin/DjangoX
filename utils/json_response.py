@@ -10,7 +10,7 @@ from rest_framework.response import Response
 class SuccessResponse(Response):
     """
     标准响应成功的返回, SuccessResponse(data)或者SuccessResponse(data=data)
-    (1)默认code返回2000, 不支持指定其他返回码
+    (1)默认code返回200, 不支持指定其他返回码
     """
 
     def __init__(self, data=None, msg='success', status=None, template_name=None, headers=None, exception=False,
@@ -18,7 +18,7 @@ class SuccessResponse(Response):
         if not data:
             total = 0
         std_data = {
-            "code": 2000,
+            "code": 200,
             "data": {
                 "page": page,
                 "limit": limit,
@@ -32,13 +32,13 @@ class SuccessResponse(Response):
 class DetailResponse(Response):
     """
     不包含分页信息的接口返回,主要用于单条数据查询
-    (1)默认code返回2000, 不支持指定其他返回码
+    (1)默认code返回200, 不支持指定其他返回码
     """
 
     def __init__(self, data=None, msg='success', status=None, template_name=None, headers=None, exception=False,
                  content_type=None,):
         std_data = {
-            "code": 2000,
+            "code": 200,
             "data": data,
             "msg": msg
         }

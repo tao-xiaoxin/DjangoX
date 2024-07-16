@@ -14,6 +14,7 @@ load_dotenv()
 DEBUG = eval(os.getenv("DEBUG", 'True'))
 ALLOWED_HOSTS = eval(os.getenv("ALLOWED_HOSTS", '["*"]'))
 table_prefix = os.getenv("TABLE_PREFIX", "djangox_")  # 数据库表名前缀
+IS_SINGLE_TOKEN = False  # 是否只允许单用户单一地点登录(只有一个人在线上)(默认多地点登录),只针对后台用户生效
 
 # ================================================= #
 # ************** mysql数据库 配置  ************** #

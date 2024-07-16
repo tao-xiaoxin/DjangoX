@@ -29,8 +29,6 @@ class CoreModel(models.Model):
                                 verbose_name='创建人', help_text="创建人", on_delete=models.SET_NULL,
                                 db_constraint=False)
     modifier = models.CharField(max_length=100, null=True, blank=True, help_text="修改人", verbose_name="修改人")
-    dept_belong_id = models.CharField(max_length=100, help_text="数据归属部门", null=True, blank=True,
-                                      verbose_name="数据归属部门")
     update_time = models.DateTimeField(auto_now=True, null=True, blank=True, help_text="修改时间",
                                        verbose_name="修改时间")
     create_time = models.DateTimeField(auto_now_add=True, null=True, blank=True, help_text="创建时间",

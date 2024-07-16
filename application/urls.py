@@ -19,7 +19,7 @@ from django.urls import path
 from django.urls import path, include, re_path
 from django.views.static import serve
 
-from apps.user.views import CaptchaView
+from user.views import CaptchaView
 from configs.config import openapi_title
 # 媒体文件流式响应
 from utils.streamingmedia_response import streamingmedia_serve
@@ -52,11 +52,17 @@ urlpatterns = [
     path('static/<path:path>', serve, {'document_root': settings.STATIC_ROOT}, ),  # 处理静态文件
     # path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT},),  # 处理媒体文件
     path('media/<path:path>', streamingmedia_serve, {'document_root': settings.MEDIA_ROOT}, ),  # 处理媒体文件
+
+    # ========================================================================================= #
+    # ************************************ 接口文档相关 ************************************* #
+    # ========================================================================================= #
     # api文档地址(正式上线需要注释掉)
     re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     re_path(r'^api/djapi(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='api-schema-json'),
-    path('djapi/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path(r'djredoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('api-docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path(r'djangox-redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+
+
     path('admin/', admin.site.urls),
 
     # ========================================================================================= #

@@ -18,7 +18,7 @@ from utils.json_response import ErrorResponse
 logger = logging.getLogger(__name__)
 
 
-def CustomExceptionHandler(ex, context):
+def handle_custom_exception(ex, context):
     """
     统一异常拦截处理
     目的:(1)取消所有的500异常响应,统一响应为标准错误返回
@@ -95,15 +95,16 @@ def CustomExceptionHandler(ex, context):
     # print(traceback.format_exc())
     return ErrorResponse(msg=msg, code=code)
 
-# class APIException(Exception):
-#     """
-#     通用异常:(1)用于接口请求是抛出移除, 此时code会被当做标准返回的code, message会被当做标准返回的msg
-#     """
-#
-#     def __init__(self, code=201, message='API异常', args=('API异常',)):
-#         self.args = args
-#         self.code = code
-#         self.message = message
-#
-#     def __str__(self):
-#         return self.message
+
+class APIException(Exception):
+    """
+    通用异常:(1)用于接口请求是抛出移除, 此时code会被当做标准返回的code, message会被当做标准返回的msg
+    """
+
+    def __init__(self, code=201, message='API异常', args=('API异常',)):
+        self.args = args
+        self.code = code
+        self.message = message
+
+    def __str__(self):
+        return self.message

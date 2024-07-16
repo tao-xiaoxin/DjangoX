@@ -18,6 +18,7 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
+sys.path.insert(0, os.path.join(BASE_DIR, 'utils'))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -41,15 +42,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     # 第三方插件
     "corsheaders",
     'rest_framework',
     'django_filters',
     'drf_yasg',  # 在线接口文档
     'captcha',  # 验证码
+    "django_extensions",  # django shell命令扩展
 
     # 自定义APP
-    "apps.user",
+    # "user",
+    # "system",
+    "apps.user.apps.UserConfig",
+    # "apps.system.apps.SystemConfig"
 ]
 
 MIDDLEWARE = [
@@ -348,7 +354,7 @@ REST_FRAMEWORK = {
     #     'anon': '30/minute',                   #未登录用户每分钟可以请求30次，还可以设置'100/day',天数
     #     'user': '60/minute'                    #已登录用户每分钟可以请求60次
     # },
-    'EXCEPTION_HANDLER': 'utils.exception.CustomExceptionHandler',  # 自定义的异常处理
+    'EXCEPTION_HANDLER': 'utils.exception.handle_custom_exception',  # 自定义的异常处理
     # #线上部署正式环境，关闭web接口测试页面
     # 'DEFAULT_RENDERER_CLASSES':(
     #     'rest_framework.renderers.JSONRenderer',
