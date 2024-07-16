@@ -274,15 +274,6 @@ LOGGING = {
             "maxBytes": max_bytes,
             "backupCount": backup_count,
         },
-        "warning": {
-            "level": "WARNING",
-            "class": LOG_CLASS,
-            "formatter": "standard",
-            "filters": ["warn_filter"],
-            "filename": os.path.join(LOG_DIR, "waring.log"),
-            "maxBytes": max_bytes,
-            "backupCount": backup_count,
-        },
         "info": {
             "level": "INFO",
             "class": LOG_CLASS,
@@ -292,36 +283,27 @@ LOGGING = {
             "maxBytes": max_bytes,
             "backupCount": backup_count,
         },
-        "debug": {
-            "level": "DEBUG",
-            "class": LOG_CLASS,
-            "formatter": "standard",
-            "filters": ["debug_filter"],
-            "filename": os.path.join(LOG_DIR, "debug.log"),
-            "maxBytes": max_bytes,
-            "backupCount": backup_count,
-        },
         # 控制台输出
         "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "standard"},
     },
     "loggers": {
-        # # default日志
+        # # # default日志
         # '': {
-        #     'handlers': ['error', 'info', "debug", "warning"],
+        #     'handlers': ['error', 'info',],
         #     'level': 'INFO',
         # },
         "django": {
-            "handlers": ["info", "warning", "debug", "error", ],
+            "handlers": ["info", "error", ],
             "level": "INFO",
             "propagate": True
         },
         'scripts': {
-            'handlers': ["info", "warning", "debug", "error", ],
+            'handlers': ["info", "error", ],
             'level': 'INFO',
         },
         # 数据库相关日志
         'django.db.backends': {
-            'handlers': ["info", "warning", "debug", "error", ],
+            'handlers': ["info", "error", ],
             'propagate': False,
             'level': 'INFO',
         },

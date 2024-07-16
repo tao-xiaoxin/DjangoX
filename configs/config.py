@@ -55,3 +55,8 @@ LOG_FORMAT = os.getenv('LOG_FORMAT', '%(levelname)s %(asctime)s [%(threadName)s:
 max_bytes = eval(os.getenv('LOG_MAX_BYTES', "1024 * 1024 * 300"))
 # 备份份数
 backup_count = os.getenv('LOG_BACKUP_COUNT', 10)
+
+# ================================================= #
+# ************** swagger 配置  ************** #
+# ================================================= #
+openapi_title = os.getenv("OPENAPI_TITLE", "DjangoX API")

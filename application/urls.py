@@ -16,7 +16,52 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.urls import path, include, re_path
+from django.views.static import serve
 
+from apps.user.views import CaptchaView
+from configs.config import openapi_title
+# 媒体文件流式响应
+from utils.streamingmedia_response import streamingmedia_serve
+from django.conf import settings
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from utils.swagger import CustomOpenAPISchemaGenerator
+from rest_framework import permissions
+from rest_framework_simplejwt.views import TokenRefreshView
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title=openapi_title,
+        default_version='v1',
+        # description="Test description",
+        # terms_of_service="https://www.google.com/policies/terms/",
+        # contact=openapi.Contact(email="contact@snippets.local"),
+        # license=openapi.License(name="BSD License"),
+    ),
+    # public 如果为False，则只包含当前用户可以访问的端点。True返回全部
+    public=True,
+    permission_classes=(permissions.AllowAny,),  # 可以允许任何人查看该接口
+    # permission_classes=(permissions.IsAuthenticated) # 只允许通过认证的查看该接口
+    generator_class=CustomOpenAPISchemaGenerator,
+)
 urlpatterns = [
-    # path('admin/', admin.site.urls),
+    # ========================================================================================= #
+    # ************************************ 媒体文件相关接口 ************************************* #
+    # ========================================================================================= #
+    path('static/<path:path>', serve, {'document_root': settings.STATIC_ROOT}, ),  # 处理静态文件
+    # path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT},),  # 处理媒体文件
+    path('media/<path:path>', streamingmedia_serve, {'document_root': settings.MEDIA_ROOT}, ),  # 处理媒体文件
+    # api文档地址(正式上线需要注释掉)
+    re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    re_path(r'^api/djapi(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='api-schema-json'),
+    path('djapi/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path(r'djredoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('admin/', admin.site.urls),
+
+    # ========================================================================================= #
+    # ************************************ 用户认证相关接口 ************************************* #
+    # ========================================================================================= #
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 刷新token
+    path('api/captcha/', CaptchaView.as_view()),  # 获取图片验证码
 ]
