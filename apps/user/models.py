@@ -17,6 +17,7 @@ class Users(AbstractUser, BaseModel):
         (0, "女"),
         (1, "男"),
     )
+    user_id = models.CharField(max_length=100, primary_key=True, help_text="用户ID", verbose_name="用户ID")
 
     user_name = models.CharField(max_length=50, unique=True, db_index=True, verbose_name='用户账号',
                                  help_text="用户账号")

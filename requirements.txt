@@ -13,3 +13,4 @@ loguru
 PyMySQL
 django-extensions
 user-agents
+six

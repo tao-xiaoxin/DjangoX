@@ -15,11 +15,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
 from django.urls import path, include, re_path
 from django.views.static import serve
-
-from user.views import CaptchaView
+from user.views.common import CaptchaView  # type: ignore
+from user.views.login import LoginView  # type: ignore
+from user.views.signup import SignUpView  # type: ignore
 from configs.config import openapi_title
 # 媒体文件流式响应
 from utils.streamingmedia_response import streamingmedia_serve
@@ -62,12 +62,23 @@ urlpatterns = [
     path('api-docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path(r'djangox-redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
-
     path('admin/', admin.site.urls),
 
     # ========================================================================================= #
-    # ************************************ 用户认证相关接口 ************************************* #
+    # ******************************* 用户登录验证码，token相关接口 ******************************** #
     # ========================================================================================= #
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 刷新token
-    path('api/captcha/', CaptchaView.as_view()),  # 获取图片验证码
+    path('api/captcha/', CaptchaView.as_view(), name="captcha"),  # 获取图片验证码
+    path("api/login/", LoginView.as_view(), name="login"),  # 登录接口
+    path("api/signup/", SignUpView.as_view(), name="signup"),  # 注册接口
+
+    # ========================================================================================= #
+    # ***********************************  用户模块相关接口  ************************************ #
+    # ========================================================================================= #
+    path("api/user/", include("user.urls"), name="user"),  # 用户路由分发
+
+    # ========================================================================================= #
+    # ***********************************  系统模块相关接口  *********************************** #
+    # ========================================================================================= #
+    path('api/system/', include('system.urls'), name="system"),  # 系统路由分发
 ]

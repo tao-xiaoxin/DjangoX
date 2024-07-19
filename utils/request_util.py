@@ -9,7 +9,7 @@ from django.urls.resolvers import ResolverMatch
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from user_agents import parse
 
-from system.models import LoginLog
+# from system.models import LoginLog
 
 
 def get_request_user(request):
@@ -138,7 +138,7 @@ def get_browser(request, ):
     :param kwargs:
     :return:
     """
-    browser=""
+    browser = ""
     try:
         ua_string = request.META['HTTP_USER_AGENT']
         if ua_string:
@@ -190,18 +190,18 @@ def get_verbose_name(queryset=None, view=None, model=None):
         pass
     return model if model else ""
 
-def save_login_log(request):
-    """
-    保存登录日志
-    :return:
-    """
-    ip = get_request_ip(request=request)
-    analysis_data = {}
-    analysis_data['username'] = str(request.user.username)
-    analysis_data['ip'] = ip
-    analysis_data['agent'] = str(parse(request.META['HTTP_USER_AGENT']))
-    analysis_data['browser'] = get_browser(request)
-    analysis_data['os'] = get_os(request)
-    analysis_data['creator_id'] = request.user.id
-    analysis_data['dept_belong_id'] = getattr(request.user, 'dept_id', '')
-    LoginLog.objects.create(**analysis_data)
+
+# def save_login_log(request):
+#     """
+#     保存登录日志
+#     :return:
+#     """
+#     ip = get_request_ip(request=request)
+#     analysis_data = {}
+#     analysis_data['username'] = str(request.user.username)
+#     analysis_data['ip'] = ip
+#     analysis_data['agent'] = str(parse(request.META['HTTP_USER_AGENT']))
+#     analysis_data['browser'] = get_browser(request)
+#     analysis_data['os'] = get_os(request)
+#     analysis_data['creator_id'] = request.user.id
+#     LoginLog.objects.create(**analysis_data)
