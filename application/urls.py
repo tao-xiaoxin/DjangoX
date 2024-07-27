@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.views.static import serve
-from user.views.common import CaptchaView  # type: ignore
+from user.views.common import CaptchaRefresh  # type: ignore
 from user.views.login import LoginView  # type: ignore
 from user.views.signup import SignUpView  # type: ignore
 from configs.config import openapi_title
@@ -67,18 +67,19 @@ urlpatterns = [
     # ========================================================================================= #
     # ******************************* 用户登录验证码，token相关接口 ******************************** #
     # ========================================================================================= #
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 刷新token
-    path('api/captcha/', CaptchaView.as_view(), name="captcha"),  # 获取图片验证码
-    path("api/login/", LoginView.as_view(), name="login"),  # 登录接口
-    path("api/signup/", SignUpView.as_view(), name="signup"),  # 注册接口
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 刷新token
+    re_path(r"captcha/refresh/$", CaptchaRefresh.as_view(), name="captcha-refresh"),  # 刷新图片验证码
+    path('captcha/', include('captcha.urls')),  # 图片验证码路由
+    path("login/", LoginView.as_view(), name="login"),  # 登录接口
+    path("signup/", SignUpView.as_view(), name="signup"),  # 注册接口
 
     # ========================================================================================= #
     # ***********************************  用户模块相关接口  ************************************ #
     # ========================================================================================= #
-    path("api/user/", include("user.urls"), name="user"),  # 用户路由分发
+    path("user/", include("user.urls"), name="user"),  # 用户路由分发
 
     # ========================================================================================= #
     # ***********************************  系统模块相关接口  *********************************** #
     # ========================================================================================= #
-    path('api/system/', include('system.urls'), name="system"),  # 系统路由分发
+    path('system/', include('system.urls'), name="system"),  # 系统路由分发
 ]

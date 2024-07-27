@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     # 自定义APP
     # "user",
     # "system",
-    "apps.user.apps.UserConfig",
+    "apps.user",
     # "apps.system.apps.SystemConfig"
 ]
 
@@ -433,7 +433,7 @@ CAPTCHA_NOISE_FUNCTIONS = (
 )
 # CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.random_char_challenge' #字母验证码
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'  # 加减乘除验证码
-
+CAPTCHA_EXPIRE_TIME = CAPTCHA_EXPIRE_TIME  # 验证码有效时间
 # ================================================= #
 # ******************** celery配置 ******************** #
 # ================================================= #
@@ -475,6 +475,5 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = 'None'
 # ================================================= #
 # 自定义用户模型
 AUTH_USER_MODEL = 'user.Users'
-USERNAME_FIELD = 'user_name'
-ALL_MODELS_OBJECTS = []  # 所有app models 对象
+USERNAME_FIELD = 'username'
 table_prefix = table_prefix  # 数据库表名前缀

@@ -7,6 +7,8 @@
 from django.db import DataError
 from rest_framework.exceptions import APIException
 from rest_framework.validators import UniqueValidator
+from rest_framework import serializers as drf_serializers
+from utils.json_response import ErrorResponse, DetailResponse
 
 
 class CustomValidationError(APIException):
@@ -68,3 +70,18 @@ class CustomUniqueValidator(UniqueValidator):
 
     def __repr__(self):
         return super().__repr__()
+
+
+def handle_serializer_validation(serializer):
+    """
+    处理序列化器验证错误
+    :param serializer: 序列化器
+    """
+    try:
+        serializer.is_valid(raise_exception=True)
+    except drf_serializers.ValidationError as e:
+        # 获取第一个错误字段的名称
+        first_field_name = next(iter(e.detail))
+        # 获取第一个错误信息
+        first_error = e.detail[first_field_name][0]
+        return ErrorResponse(msg=first_error)

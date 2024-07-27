@@ -61,3 +61,9 @@ backup_count = os.getenv('LOG_BACKUP_COUNT', 10)
 # ************** swagger 配置  ************** #
 # ================================================= #
 openapi_title = os.getenv("OPENAPI_TITLE", "DjangoX API")
+
+# ================================================= #
+# ************** 验证码 配置  ************** #
+# ================================================= #
+# 验证码有效时间
+CAPTCHA_EXPIRE_TIME = eval(os.getenv("CAPTCHA_EXPIRE_TIME", 5))

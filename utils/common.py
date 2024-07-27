@@ -274,3 +274,89 @@ def bas64_decode_text(text):
     if isinstance(text, str):
         return str(base64.decodebytes(bytes(text, encoding="utf8")), 'utf-8')
     return text
+
+
+class SnowflakeIDWorker:
+    def __init__(self, datacenter_id, worker_id):
+        """
+        初始化 SnowflakeIDWorker
+        :param datacenter_id: 数据中心ID (0-3)
+        :param worker_id: 工作机器ID (0-3)
+        """
+        self.twepoch = int(time.time() * 1000)  # 设置起始时间戳（毫秒级）
+        self.datacenter_id_bits = 2  # 数据中心ID所占位数
+        self.worker_id_bits = 2  # 工作机器ID所占位数
+        self.sequence_bits = 8  # 序列号所占位数
+
+        # 计算最大值
+        self.max_datacenter_id = -1 ^ (-1 << self.datacenter_id_bits)  # 最大数据中心ID
+        self.max_worker_id = -1 ^ (-1 << self.worker_id_bits)  # 最大工作机器ID
+
+        # 移位量
+        self.worker_id_shift = self.sequence_bits
+        self.datacenter_id_shift = self.sequence_bits + self.worker_id_bits
+        self.timestamp_left_shift = self.sequence_bits + self.worker_id_bits + self.datacenter_id_bits
+        self.sequence_mask = -1 ^ (-1 << self.sequence_bits)
+
+        # 参数校验
+        if datacenter_id > self.max_datacenter_id or datacenter_id < 0:
+            raise ValueError(f"Datacenter ID不能大于{self.max_datacenter_id}或小于0")
+        if worker_id > self.max_worker_id or worker_id < 0:
+            raise ValueError(f"Worker ID不能大于{self.max_worker_id}或小于0")
+
+        self.datacenter_id = datacenter_id
+        self.worker_id = worker_id
+        self.sequence = 0
+        self.last_timestamp = -1
+
+    def next_id(self):
+        """
+        生成下一个ID
+        :return: 7-10位的唯一ID
+        """
+        timestamp = self.get_time()
+
+        if timestamp < self.last_timestamp:
+            raise ValueError("时钟回拨，拒绝生成ID")
+
+        if timestamp == self.last_timestamp:
+            self.sequence = (self.sequence + 1) & self.sequence_mask
+            if self.sequence == 0:
+                timestamp = self.til_next_millis(self.last_timestamp)
+        else:
+            self.sequence = 0
+
+        self.last_timestamp = timestamp
+
+        # 生成ID
+        new_id = ((timestamp - self.twepoch) << self.timestamp_left_shift) | \
+                 (self.datacenter_id << self.datacenter_id_shift) | \
+                 (self.worker_id << self.worker_id_shift) | \
+                 self.sequence
+
+        # 转换为字符串并取最后10位
+        str_id = str(new_id)[-10:]
+
+        # 确保ID至少有7位
+        while len(str_id) < 7:
+            str_id = '0' + str_id
+
+        return str_id
+
+    def til_next_millis(self, last_timestamp):
+        """
+        等待到下一个毫秒
+        :param last_timestamp: 上次生成ID的时间戳
+        :return: 新的时间戳
+        """
+        timestamp = self.get_time()
+        while timestamp <= last_timestamp:
+            timestamp = self.get_time()
+        return timestamp
+
+    def get_time(self):
+        """
+        获取当前时间戳（毫秒级）
+        :return: 当前时间戳
+        """
+        return int(time.time() * 1000)

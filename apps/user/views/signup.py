@@ -1,6 +1,7 @@
 from rest_framework.generics import GenericAPIView
-from ..serializers.signup_serializers import SignUpSerializer
-from utils.json_response import SuccessResponse, ErrorResponse
+from ..serializers.signup import SignUpSerializer
+from utils.validator import handle_serializer_validation
+from utils.json_response import DetailResponse, ErrorResponse
 
 
 class SignUpView(GenericAPIView):
@@ -13,6 +14,6 @@ class SignUpView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return SuccessResponse(msg="注册成功！")
-        return ErrorResponse(msg="注册失败！")
+            o_users = serializer.create(request.data)
+            return DetailResponse(msg="注册成功！")
+        return handle_serializer_validation(serializer)
