@@ -52,7 +52,7 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: "django-vue3-admin"
+      MYSQL_DATABASE: "djangox"
       TZ: Asia/Shanghai
     command:
       --wait_timeout=31536000
