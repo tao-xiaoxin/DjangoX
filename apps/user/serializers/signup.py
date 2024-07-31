@@ -3,15 +3,15 @@ from application.settings import CAPTCHA_EXPIRE_TIME
 from captcha.models import CaptchaStore
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
-from django_redis import get_redis_connection
-
+import logging
 from utils.validator import CustomValidationError
 from ..models import Users, GENDER_CHOICES
 from utils.common import REGEX_MOBILE
 import re
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
-class SignUpSerializer(serializers.Serializer):
+class SignUpSerializer(serializers.ModelSerializer):
     """
     注册序列化器
     """
@@ -22,23 +22,23 @@ class SignUpSerializer(serializers.Serializer):
                                          "max_length": "用户账号长度不能超过50个字符!"
                                      }
                                      )
-    verify_key = serializers.CharField(max_length=200, help_text="图片验证码key", write_only=True,
+    verify_key = serializers.CharField(max_length=200, help_text="图片验证码key",
                                        error_messages={
                                            "max_length": "图片验证码key长度不能超过200个字符!"
                                        }
                                        )
-    verify_value = serializers.CharField(max_length=6, help_text="图片验证码", write_only=True,
+    verify_value = serializers.CharField(max_length=6, help_text="图片验证码",
                                          error_messages={
                                              "max_length": "图片验证码长度不能超过6个字符!"
                                          }
                                          )
-    password = serializers.CharField(max_length=50, help_text="密码", write_only=True,
+    password = serializers.CharField(max_length=50, help_text="密码",
                                      error_messages={
                                          "blank": "密码不可以为空!",
                                          "max_length": "密码长度不能超过50个字符!"
                                      }
                                      )
-    password2 = serializers.CharField(max_length=50, help_text="确认密码", write_only=True,
+    password2 = serializers.CharField(max_length=50, help_text="确认密码",
                                       error_messages={
                                           "blank": "确认密码不可以为空!",
                                           "max_length": "确认密码长度不能超过50个字符!"
@@ -52,9 +52,9 @@ class SignUpSerializer(serializers.Serializer):
                                    }
                                    )
 
-    mobile = serializers.CharField(max_length=30, help_text="电话", required=False, allow_blank=True, allow_null=True,
+    mobile = serializers.CharField(max_length=11, help_text="电话", required=False, allow_blank=True, allow_null=True,
                                    error_messages={
-                                       "max_length": "电话号码长度不能超过30个字符!"
+                                       "max_length": "电话号码长度不能超过11个字符!"
                                    }
                                    )
 
@@ -78,7 +78,8 @@ class SignUpSerializer(serializers.Serializer):
 
     class Meta:
         model = Users
-        fields = ('username', 'verify_key', "verify_value", 'email', 'mobile', 'avatar', 'nickname","gender')
+        fields = ['username', 'verify_key', "verify_value", 'email', 'mobile', 'avatar', "nickname", "gender",
+                  "password", "password2"]
 
     def validate_code(self):
         """
@@ -95,11 +96,11 @@ class SignUpSerializer(serializers.Serializer):
                 raise CustomValidationError("验证码已过期！")
             else:
                 # 验证用户输入的验证码是否正确
-                if o_captcha.response == self.initial_data['verify_value']:
+                if str(o_captcha.response) == str(self.initial_data['verify_value']):
                     o_captcha.delete()
                 else:
                     o_captcha.delete()
-                    raise CustomValidationError("验证码错误！")
+                    raise CustomValidationError("验证码输入有误！")
         except CaptchaStore.DoesNotExist:
             raise CustomValidationError("图片验证码错误！")  # 验证码不正确时抛出错误
 
@@ -113,19 +114,21 @@ class SignUpSerializer(serializers.Serializer):
             raise CustomValidationError("该账号已经注册，请跟换用户名！")
         except Users.DoesNotExist:
             pass
+        return username
 
     @staticmethod
-    def validate_mobile(mobile):
+    def validated_mobile(mobile):
         """
         验证手机号是否已经注册
         """
         if not re.match(REGEX_MOBILE, mobile):
-            raise CustomValidationError("请输入正确的手机号")
+            raise CustomValidationError("请输入正确的手机号！")
         try:
             Users.objects.get(mobile=mobile)
             raise CustomValidationError("改手机号已经注册，请跟换手机号！")
         except Users.DoesNotExist:
             pass
+        return mobile
 
     @staticmethod
     def validate_email(email):
@@ -137,6 +140,7 @@ class SignUpSerializer(serializers.Serializer):
             raise CustomValidationError("该邮箱已经注册，请跟换邮箱！")
         except Users.DoesNotExist:
             pass
+        return email
 
     def validate_password(self, password):
         """
@@ -146,23 +150,27 @@ class SignUpSerializer(serializers.Serializer):
         password2 = self.initial_data.get('password2', '')
         if len(password) < 6:
             raise CustomValidationError("密码长度至少6位!")
-        if not re.match(r'^[a-zA-Z0-9]{6,20}$', password):
+        # 密码强度：至少6-20个字符，至少1个大写字母，1个小写字母和1个数字，其他可以是任意字符
+        if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,20}$', password):
             raise CustomValidationError("密码格式不正确(大小写字母、数字组合)")
         if password != password2:
             raise CustomValidationError("两次密码输入不一致!")
+        return password
 
     def validate(self, data):
+        """
+        自定义验证器
+        """
         # 验证图片验证码
         self.validate_code()
         # 验证密码
         self.validate_password(data.get('password', ''))
         # 验证手机号
-        self.validate_mobile(data.get('mobile', ''))
+        self.validate_email(data.get('mobile', ''))
         # 验证邮箱
         self.validate_email(data.get('email', ''))
         # 验证用户名
         self.validate_username(data.get('username', ''))
-
         return data
 
     def create(self, validated_data):
@@ -184,4 +192,7 @@ class SignUpSerializer(serializers.Serializer):
             gender=gender,
             identity=2
         )
+        # Generate token
+        refresh = RefreshToken.for_user(user)
+        user.token = str(refresh.access_token)
         return user

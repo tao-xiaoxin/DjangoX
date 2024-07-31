@@ -14,3 +14,4 @@ PyMySQL
 django-extensions
 user-agents
 six
+uvicorn

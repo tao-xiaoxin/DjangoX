@@ -52,8 +52,6 @@ INSTALLED_APPS = [
     "django_extensions",  # django shell命令扩展
 
     # 自定义APP
-    # "user",
-    # "system",
     "apps.user",
     # "apps.system.apps.SystemConfig"
 ]
@@ -370,7 +368,8 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
     # 设置header字段Authorization的值得前缀： JWT accesstoken字符串
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ROTATE_REFRESH_TOKENS': True
+    'ROTATE_REFRESH_TOKENS': True,
+    'USER_ID_FIELD': 'user_id',  # 指定用户ID
 }
 
 # ====================================#
