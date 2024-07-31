@@ -362,14 +362,22 @@ REST_FRAMEWORK = {
 # ****************** simplejwt配置 ***************** #
 # ================================================= #
 SIMPLE_JWT = {
-    # token有效时长
+    # Access Token的有效期
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    # token刷新后的有效时间
+    # Refresh Token的有效期
     'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
-    # 设置header字段Authorization的值得前缀： JWT accesstoken字符串
-    'AUTH_HEADER_TYPES': ('JWT',),
+    # 用于指定JWT在HTTP请求头中使用的身份验证方案。默认为"Bearer"
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    # 是否自动刷新Refresh Token
     'ROTATE_REFRESH_TOKENS': True,
-    'USER_ID_FIELD': 'user_id',  # 指定用户ID
+    # 用户模型中用作用户ID的字段。这里默认为"user_id"。
+    'USER_ID_FIELD': 'user_id',
+    # 用于生成访问令牌和刷新令牌的序列化器。
+    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+    # 用于刷新访问令牌的序列化器。默认
+    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
+    # 用于验证令牌的序列化器。
+    "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
 }
 
 # ====================================#
@@ -476,3 +484,4 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = 'None'
 AUTH_USER_MODEL = 'user.Users'
 USERNAME_FIELD = 'username'
 table_prefix = table_prefix  # 数据库表名前缀
+APPEND_SLASH = False

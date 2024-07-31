@@ -16,7 +16,6 @@ from utils.validator import CustomValidationError
 # from utils.request_util import save_login_log
 from django_redis import get_redis_connection
 from django.conf import settings
-from configs.config import IS_SINGLE_TOKEN
 from rest_framework import serializers
 from utils.validator import CustomUniqueValidator
 from rest_framework.permissions import IsAuthenticated

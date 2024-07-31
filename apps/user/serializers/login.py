@@ -10,9 +10,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from utils.validator import CustomValidationError
 # from utils.request_util import save_login_log
-# from django_redis import get_redis_connection
 from django.conf import settings
-from configs.config import IS_SINGLE_TOKEN
 
 
 class LoginSerializer(TokenObtainPairSerializer):
@@ -20,13 +18,13 @@ class LoginSerializer(TokenObtainPairSerializer):
     登录的序列化器:
     重写djangorestframework-simplejwt的序列化器
     """
-    account_name = serializers.CharField(max_length=100, help_text="用户账号",
-                                         error_messages={
-                                             "blank": "用户账号不可以为空!",
-                                             "invalid": "用户账号必须是字符类型!",
-                                             "max_length": "用户账号长度不能超过100个字符!"
-                                         }
-                                         )
+    username = serializers.CharField(max_length=100, help_text="用户账号",
+                                     error_messages={
+                                         "blank": "用户账号不可以为空!",
+                                         "invalid": "用户账号必须是字符类型!",
+                                         "max_length": "用户账号长度不能超过100个字符!"
+                                     }
+                                     )
     verify_key = serializers.CharField(max_length=200, help_text="图片验证码key",
                                        error_messages={
                                            "max_length": "图片验证码key长度不能超过200个字符!"
@@ -46,13 +44,40 @@ class LoginSerializer(TokenObtainPairSerializer):
 
     class Meta:
         model = Users
-        fields = ['account_name', 'verify_key', 'verify_value', 'password']
+        fields = "__all__"
+        read_only_fields = ["user_id"]
 
     default_error_messages = {
         'no_active_account': _('该账号已被禁用,请联系管理员')
     }
 
-    # 开启验证码验证
+    @classmethod
+    def get_token(cls, user):
+        """
+        为指定用户生成JWT令牌并添加自定义声明。
+
+        这个方法重写了父类的 get_token 方法，允许我们向令牌中添加自定义信息。
+
+        参数:
+        user (User): 要为其生成令牌的用户对象。
+
+        返回:
+        Token: 包含自定义声明的JWT令牌对象。
+
+        注意:
+        - 添加到令牌中的信息可以被解码，因此不应包含敏感数据。
+        - 这里添加的自定义声明可以在客户端使用，无需额外的服务器请求。
+        """
+        # 调用父类方法生成基础令牌
+        token = super().get_token(user)
+
+        # 向令牌添加自定义声明
+        # 这里我们添加了用户名，可以根据需要添加其他非敏感信息
+        token['name'] = user.username
+
+        # 返回增强后的令牌
+        return token
+
     def validate_captcha(self):
         """
         验证图片验证码
@@ -79,8 +104,8 @@ class LoginSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         # 验证图片验证码
         # self.validate_captcha()
-        # account_name可能是邮箱，手机号，用户名
-        account_name = attrs.get('account_name')
+        # username可能是邮箱，手机号，用户名
+        username = attrs.get('username')
         password = attrs.get('password')
         # 使用 Q 对象进行查询
         user = Users.objects.filter(
@@ -90,7 +115,7 @@ class LoginSerializer(TokenObtainPairSerializer):
         if not user:
             result = {
                 "code": 4000,
-                "msg": "账号/密码不正确",
+                "msg": "账号/密码不正确！",
                 "data": None
             }
             return result
@@ -98,7 +123,7 @@ class LoginSerializer(TokenObtainPairSerializer):
         if user and not user.is_active:
             result = {
                 "code": 4000,
-                "msg": "该账号已被禁用,请联系管理员",
+                "msg": "该账号已被禁用,请联系管理员！",
                 "data": None
             }
             return result
@@ -115,23 +140,15 @@ class LoginSerializer(TokenObtainPairSerializer):
             request.user = self.user
             # 记录登录成功日志
             # save_login_log(request=request)
-            # 缓存用户的jwt token
-            # if IS_SINGLE_TOKEN:
-            #     redis_conn = get_redis_connection("singletoken")
-            #     k = "lybbn-single-token{}".format(user.id)
-            #     TOKEN_EXPIRE_CONFIG = getattr(settings, 'SIMPLE_JWT', None)
-            #     if TOKEN_EXPIRE_CONFIG:
-            #         TOKEN_EXPIRE = TOKEN_EXPIRE_CONFIG['ACCESS_TOKEN_LIFETIME']
-            #         redis_conn.set(k, data['access'], TOKEN_EXPIRE)
             result = {
                 "code": 200,
-                "msg": "请求成功",
+                "msg": "请求成功！",
                 "data": data
             }
         else:
             result = {
                 "code": 400,
-                "msg": "账号/密码不正确",
+                "msg": "账号/密码不正确！",
                 "data": None
             }
         return result
