@@ -44,7 +44,7 @@ def hide4mobile(mobile):
     """
     隐藏手机号中间四位
     """
-    if re.match("^\d{11}$", mobile):
+    if re.match(r"^\d{11}$", mobile):
         list = mobile[3:7]
         new_phone = mobile.replace(list, '****', 1)
         return new_phone

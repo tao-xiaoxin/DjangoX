@@ -370,14 +370,15 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     # 是否自动刷新Refresh Token
     'ROTATE_REFRESH_TOKENS': True,
-    # 用户模型中用作用户ID的字段。这里默认为"user_id"。
+    # 用户模型中用作用户ID的字段。这里为"user_id"。
     'USER_ID_FIELD': 'user_id',
     # 用于生成访问令牌和刷新令牌的序列化器。
-    "TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
-    # 用于刷新访问令牌的序列化器。默认
-    "TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSerializer",
-    # 用于验证令牌的序列化器。
-    "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
+    # "TOKEN_OBTAIN_SERIALIZER": "utils.serializers.MyTokenObtainPairSerializer",
+    # # 用于刷新访问令牌的序列化器。默认
+    "TOKEN_REFRESH_SERIALIZER": "utils.serializers.MyTokenObtainPairSerializer",
+    # # 用于验证令牌的序列化器。
+    # "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
+
 }
 
 # ====================================#

@@ -70,7 +70,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),  # 刷新token
     re_path(r"captcha/refresh/$", CaptchaRefresh.as_view(), name="captcha-refresh"),  # 刷新图片验证码
     path('captcha/', include('captcha.urls')),  # 图片验证码路由
-    re_path("login/", LoginView.as_view(), name="login"),  # 登录接口
+    path("login/", LoginView.as_view(), name="login"),  # 登录接口
     path("signup/", SignUpView.as_view(), name="signup"),  # 注册接口
 
     # ========================================================================================= #

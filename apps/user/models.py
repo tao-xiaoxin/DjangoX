@@ -33,6 +33,7 @@ class Users(AbstractUser, BaseModel):
     # 自定义
     identity = models.SmallIntegerField(choices=IDENTITY_CHOICES, verbose_name="身份标识", null=True, blank=True,
                                         default=2, help_text="身份标识")
+    is_active = models.BooleanField(default=False, verbose_name='是否禁用账号', help_text='是否禁用账号')
 
     class Meta:
         db_table = table_prefix + "users"

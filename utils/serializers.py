@@ -8,6 +8,7 @@ from rest_framework.fields import empty
 from rest_framework.request import Request
 from rest_framework.serializers import ModelSerializer
 from user.models import Users  # type: ignore
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class CustomModelSerializer(ModelSerializer):
@@ -33,8 +34,8 @@ class CustomModelSerializer(ModelSerializer):
     # 数据所属部门字段
     dept_belong_id_field_name = 'dept_belong_id'
     # 添加默认时间返回格式
-    create_datetime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    update_datetime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    create_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
 
     def __init__(self, instance=None, data=empty, request=None, **kwargs):
         super().__init__(instance, data, **kwargs)
@@ -78,3 +79,33 @@ class CustomModelSerializer(ModelSerializer):
         if getattr(self.request, 'user', None):
             return getattr(self.request.user, 'id', None)
         return None
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    重写djangorestframework-simplejwt的序列化器
+    """
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['name'] = user.username
+        token['id'] = user.user_id
+        return token
+
+    def validate(self, attrs):
+        """
+        自定义返回的格式
+        """
+        old_data = super().validate(attrs)
+        refresh = self.get_token(self.user)
+        data = {'code': 2000,
+                'msg': "success!",
+                'username': self.user.username,
+                "user_id": self.user.user_id,
+                "avatar": self.user.avatar,
+                "nickname": self.user.nickname,
+                'refresh_token': str(refresh),
+                'access_token': str(refresh.access_token)
+                }
+        return data

@@ -15,11 +15,5 @@ class SignUpView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
             return handle_serializer_validation(serializer)
-        o_users = serializer.create(request.data)
-        json_data = {
-            "token": o_users.token,
-            "username": o_users.username,
-            "email": o_users.email,
-            "user_id": o_users.user_id,
-        }
-        return DetailResponse(msg="注册成功！", data=json_data)
+        data = serializer.create(request.data)
+        return DetailResponse(msg="注册成功！", data=data)

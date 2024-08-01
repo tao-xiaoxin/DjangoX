@@ -194,5 +194,12 @@ class SignUpSerializer(serializers.ModelSerializer):
         )
         # Generate token
         refresh = RefreshToken.for_user(user)
-        user.token = str(refresh.access_token)
-        return user
+        data = {
+            'username': user.username,
+            "user_id": user.user_id,
+            "avatar": user.avatar,
+            "nickname": user.nickname,
+            'refresh_token': str(refresh),
+            'access_token': str(refresh.access_token)
+        }
+        return data
