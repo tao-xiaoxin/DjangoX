@@ -372,10 +372,8 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     # 用户模型中用作用户ID的字段。这里为"user_id"。
     'USER_ID_FIELD': 'user_id',
-    # 用于生成访问令牌和刷新令牌的序列化器。
-    # "TOKEN_OBTAIN_SERIALIZER": "utils.serializers.MyTokenObtainPairSerializer",
-    # # 用于刷新访问令牌的序列化器。默认
-    "TOKEN_REFRESH_SERIALIZER": "utils.serializers.MyTokenObtainPairSerializer",
+    # 用于刷新访问令牌的序列化器。默认
+    "TOKEN_REFRESH_SERIALIZER": "utils.serializers.TokenRefreshSerializer",
     # # 用于验证令牌的序列化器。
     # "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
 
@@ -441,7 +439,8 @@ CAPTCHA_NOISE_FUNCTIONS = (
 )
 # CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.random_char_challenge' #字母验证码
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'  # 加减乘除验证码
-CAPTCHA_EXPIRE_TIME = CAPTCHA_EXPIRE_TIME  # 验证码有效时间
+CAPTCHA_EXPIRE_TIME = CAPTCHA_EXPIRE_TIME  #
+
 # ================================================= #
 # ******************** celery配置 ******************** #
 # ================================================= #

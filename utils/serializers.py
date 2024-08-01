@@ -8,7 +8,9 @@ from rest_framework.fields import empty
 from rest_framework.request import Request
 from rest_framework.serializers import ModelSerializer
 from user.models import Users  # type: ignore
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.serializers import TokenVerifySerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.settings import api_settings
 
 
 class CustomModelSerializer(ModelSerializer):
@@ -81,31 +83,49 @@ class CustomModelSerializer(ModelSerializer):
         return None
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+class TokenRefreshSerializer(serializers.Serializer):
     """
-    重写djangorestframework-simplejwt的序列化器
+    自定义的令牌刷新序列化器，自定义输出格式
     """
-
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token['name'] = user.username
-        token['id'] = user.user_id
-        return token
+    # 定义一个字符串字段来接收刷新令牌，并添加自定义错误信息
+    refresh = serializers.CharField(
+        error_messages={
+            "blank": "刷新令牌不可以为空!",
+            "required": "刷新令牌是必填项!",
+        }
+    )
 
     def validate(self, attrs):
-        """
-        自定义返回的格式
-        """
-        old_data = super().validate(attrs)
-        refresh = self.get_token(self.user)
-        data = {'code': 2000,
-                'msg': "success!",
-                'username': self.user.username,
-                "user_id": self.user.user_id,
-                "avatar": self.user.avatar,
-                "nickname": self.user.nickname,
-                'refresh_token': str(refresh),
-                'access_token': str(refresh.access_token)
-                }
+        # 使用提供的刷新令牌创建一个新的 RefreshToken 对象
+        refresh = RefreshToken(attrs['refresh'])
+        refresh_data = {
+            'access_token': str(refresh.access_token)
+        }
+        # 检查是否启用了刷新令牌轮换
+        if api_settings.ROTATE_REFRESH_TOKENS:
+            # 检查是否在轮换后将旧令牌加入黑名单
+            if api_settings.BLACKLIST_AFTER_ROTATION:
+                try:
+                    # 尝试将给定的刷新令牌加入黑名单
+                    refresh.blacklist()
+                except AttributeError:
+                    # 如果未安装黑名单应用，`blacklist` 方法将不存在
+                    # 这种情况下我们简单地跳过黑名单操作
+                    pass
+
+            # 为刷新令牌设置新的 JTI (JWT ID)
+            refresh.set_jti()
+            # 为刷新令牌设置新的过期时间
+            refresh.set_exp()
+
+            # 将新的刷新令牌添加到数据字典中
+            refresh_data['refresh_token'] = str(refresh)
+
+        # 创建一个包含新的访问令牌的数据字典
+        data = {
+            "code": 2000,
+            "msg": "刷新成功!",
+            "data": refresh_data
+        }
+        # 返回包含新的访问令牌和（如果适用）新的刷新令牌的数据字典
         return data
