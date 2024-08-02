@@ -14,6 +14,7 @@ load_dotenv()
 DEBUG = eval(os.getenv("DEBUG", 'True'))
 ALLOWED_HOSTS = eval(os.getenv("ALLOWED_HOSTS", '["*"]'))
 table_prefix = os.getenv("TABLE_PREFIX", "djangox_")  # 数据库表名前缀
+DOMAIN_HOST = "http://127.0.0.1:8000"
 
 # ================================================= #
 # ************** mysql数据库 配置  ************** #

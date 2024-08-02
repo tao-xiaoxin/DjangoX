@@ -15,3 +15,5 @@ django-extensions
 user-agents
 six
 uvicorn
+xlrd
+xlwt

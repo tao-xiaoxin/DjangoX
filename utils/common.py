@@ -360,3 +360,8 @@ class SnowflakeIDWorker:
         :return: 当前时间戳
         """
         return int(time.time() * 1000)
+
+
+def getfulldomian(requests):
+    host = '{scheme}://{host}'.format(scheme=requests.scheme, host=requests.get_host())
+    return host

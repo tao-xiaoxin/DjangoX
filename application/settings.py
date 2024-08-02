@@ -53,7 +53,7 @@ INSTALLED_APPS = [
 
     # 自定义APP
     "apps.user",
-    # "apps.system.apps.SystemConfig"
+    "apps.system"
 ]
 
 MIDDLEWARE = [
@@ -331,18 +331,25 @@ SESSION_CACHE_ALIAS = "session"
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S",  # 日期时间格式配置
     'DATE_FORMAT': "%Y-%m-%d",
+    # 过滤配置
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-
     ),
-    'DEFAULT_PAGINATION_CLASS': 'utils.pagination.CustomPagination',  # 自定义分页
+    # 权限配置
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    # 自定义分页
+    'DEFAULT_PAGINATION_CLASS': 'utils.pagination.CustomPagination',
+    # 登录认证相关配置
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         # 'rest_framework_simplejwt.authentication.JWTTokenUserAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+
     # 限速设置
     # 'DEFAULT_THROTTLE_CLASSES': (
     #         'rest_framework.throttling.AnonRateThrottle',   #未登陆用户
@@ -372,10 +379,8 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     # 用户模型中用作用户ID的字段。这里为"user_id"。
     'USER_ID_FIELD': 'user_id',
-    # 用于刷新访问令牌的序列化器。默认
+    # 用于刷新访问令牌的序列化器。
     "TOKEN_REFRESH_SERIALIZER": "utils.serializers.TokenRefreshSerializer",
-    # # 用于验证令牌的序列化器。
-    # "TOKEN_VERIFY_SERIALIZER": "rest_framework_simplejwt.serializers.TokenVerifySerializer",
 
 }
 

@@ -1,67 +1,203 @@
-# class UserSerializer(CustomModelSerializer):
-#     """
-#     用户管理-序列化器
-#     """
-#     rolekey = serializers.SerializerMethodField(read_only=True)  # 新增自定义字段
-#
-#     def get_rolekey(self,obj):
-#         queryset = Role.objects.filter(users__id=obj.id).values_list('key',flat=True)
-#         return queryset
-#
-#     class Meta:
-#         model = Users
-#         read_only_fields = ["id"]
-#         exclude = ['password']
-#         extra_kwargs = {
-#             'post': {'required': False},
-#         }
-#
-#
-# class UserViewSet(CustomModelViewSet):
-#     """
-#     后台管理员用户接口:
-#     """
-#     queryset = Users.objects.filter(identity=1,is_delete=False).order_by('-create_datetime')
-#     serializer_class = UserSerializer
-#     create_serializer_class = UserCreateSerializer
-#     update_serializer_class = UserUpdateSerializer
-#     # filterset_fields = ('name','is_active','username')
-#     filterset_class = UsersManageTimeFilter
-#
-#     def user_info(self,request):
-#         """获取当前用户信息"""
-#         user = request.user
-#         result = {
-#             "name":user.name,
-#             "mobile":user.mobile,
-#             "gender":user.gender,
-#             "email":user.email
-#         }
-#         return SuccessResponse(data=result,msg="获取成功")
-#
-#     def update_user_info(self,request):
-#         """修改当前用户信息"""
-#         user = request.user
-#         Users.objects.filter(id=user.id).update(**request.data)
-#         return SuccessResponse(data=None, msg="修改成功")
-#
-#
-#     def change_password(self,request,*args, **kwargs):
-#         """密码修改"""
-#         user = request.user
-#         instance = Users.objects.filter(id=user.id,identity__in=[0,1]).first()
-#         data = request.data
-#         old_pwd = data.get('oldPassword')
-#         new_pwd = data.get('newPassword')
-#         new_pwd2 = data.get('newPassword2')
-#         if instance:
-#             if new_pwd != new_pwd2:
-#                 return ErrorResponse(msg="2次密码不匹配")
-#             elif instance.check_password(old_pwd):
-#                 instance.password = make_password(new_pwd)
-#                 instance.save()
-#                 return SuccessResponse(data=None, msg="修改成功")
-#             else:
-#                 return ErrorResponse(msg="旧密码不正确")
-#         else:
-#             return ErrorResponse(msg="未获取到用户")
+from django.shortcuts import render
+from rest_framework.views import APIView
+from utils.json_response import SuccessResponse, ErrorResponse
+from utils.common import get_parameter_dic, getRandomSet
+import re
+from django.db.models import Q, F, Sum
+from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from utils.serializers import CustomModelSerializer
+from utils.viewset import CustomModelViewSet
+from rest_framework.permissions import IsAuthenticated
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from utils.image_upload import ImageUpload
+from ..models import Users
+from utils.filters import UsersManageTimeFilter
+from django.contrib.auth.hashers import make_password
+from utils.export_excel import export_excel
+from django.db import transaction
+
+# Create your views here.
+
+
+class UserManageViewSet(CustomModelViewSet):
+    """
+    后台用户管理 接口:
+    """
+    queryset = Users.objects.filter(identity=2).order_by("-create_time")  # 排除管理员
+    # serializer_class = UserManageSerializer
+    # create_serializer_class = UserManageCreateSerializer
+    # update_serializer_class = UserManageUpdateSerializer
+    filterset_class = UsersManageTimeFilter
+
+    def disableuser(self, request, *args, **kwargs):
+        """禁用用户"""
+        instance = Users.objects.filter(id=kwargs.get('pk')).first()
+        if instance:
+            if instance.is_active:
+                instance.is_active = False
+            else:
+                instance.is_active = True
+            instance.save()
+            return SuccessResponse(data=None, msg="修改成功")
+        else:
+            return ErrorResponse(msg="未获取到用户")
+
+    def exportexecl(self, request):
+        field_data = ['主键', '昵称', '手机号', '状态', '创建时间']
+        queryset = self.filter_queryset(self.get_queryset())
+        data = ExportUserManageSerializer(queryset, many=True).data
+        return SuccessResponse(data=export_excel(request, field_data, data, '用户数据.xls'), msg='success')
+
+
+# ================================================= #
+# ************** 前端用户中心 view  ************** #
+# ================================================= #
+
+# 前端图片上传
+class uploadImagesView(APIView):
+    '''
+    前端图片上传
+    post:
+    【功能描述】前端图片上传</br>
+    【参数说明】无，需要登录携带token后才能调用</br>
+    '''
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        result = ImageUpload(request, "frontendimages")
+        if result['code'] == 200:
+            return SuccessResponse(data=result['img'], msg=result['msg'])
+        else:
+            return ErrorResponse(msg=result['msg'])
+
+
+class SetUserNicknameView(APIView):
+    """
+    修改昵称
+    post:
+    修改昵称
+    【参数】nickname:需要修改的用户新昵称
+    """
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    # api文档参数
+
+    @swagger_auto_schema(operation_summary='app回收员修改昵称',
+                         # manual_parameters=[#GET请求需要
+                         #     # openapi.Parameter("nickname", openapi.IN_QUERY, description="要修改昵称", type=openapi.TYPE_STRING)
+                         # ],
+                         request_body=openapi.Schema(  # POST请求需要
+                             type=openapi.TYPE_OBJECT,
+                             required=['nickname'],
+                             properties={
+                                 'nickname': openapi.Schema(type=openapi.TYPE_STRING, description="要修改昵称"),
+                             },
+                         ),
+                         responses={200: 'success'},
+                         )
+    def post(self, request):
+        nickname = get_parameter_dic(request)['nickname']
+        if nickname is None:
+            return ErrorResponse(msg="昵称不能为空")
+        if not isinstance(nickname, str):
+            return ErrorResponse(msg='类型错误')
+        user = request.user
+        user.nickname = nickname
+        user.save()
+        return SuccessResponse(msg="success")
+
+
+# 前端app头像修改
+class ChangeAvatarView(APIView):
+    '''
+    前端app头像修改
+    post:
+    【功能描述】前端app头像修改</br>
+    【参数说明】无，需要登录携带token后才能调用</br>
+    '''
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        result = ImageUpload(request, "avatar")
+        if result['code'] == 200:
+            user = request.user
+            user.avatar = result['img'][0]
+            user.save()
+            return SuccessResponse(data=result['img'], msg=result['msg'])
+        else:
+            return ErrorResponse(msg=result['msg'])
+
+
+# 注销账号(标记已注销)
+class DestroyUserView(APIView):
+    '''
+    注销账号(标记已注销)
+    post:
+    【功能描述】注销账号(标记已注销)</br>
+    '''
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        if user.identity in [0, 1]:
+            return ErrorResponse(msg="该用户不支持注销")
+        if '(已注销)' in user.username:
+            return ErrorResponse(msg="该用户已注销或不支持注销")
+        with transaction.atomic():
+            randstr = getRandomSet(6)
+            user.username = user.username + "(已注销)" + randstr
+            user.mobile = user.mobile + "(已注销)" + randstr
+            user.is_delete = True
+            user.is_active = False
+            user.save()
+            OAuthWXUser.objects.filter(user=user).delete()
+            return SuccessResponse(data={}, msg="success")
+
+
+class ForgetPasswdResetView(APIView):
+    '''
+    post:
+    【功能描述】重置用户密码</br>
+    【参数说明】mobile为手机号</br>
+    【参数说明】code短信验证码</br>
+    【参数说明】password为密码</br>
+    '''
+    authentication_classes = []
+    permission_classes = []
+    def post(self, request, *args, **kwargs):
+
+        mobile = get_parameter_dic(request)['mobile']
+        code = get_parameter_dic(request)['code']
+        password = get_parameter_dic(request)['password']
+        if len(password) < 6:
+            return ErrorResponse(msg="密码长度至少6位")
+
+        # 验证手机号是否合法
+        if not re.match(REGEX_MOBILE, mobile):
+            return ErrorResponse(msg="请输入正确手机号")
+        # 判断短信验证码是否正确
+        redis_conn = get_redis_connection('verify_codes')
+        send_flag = redis_conn.get('sms_%s'%mobile)#send_flag的值为bytes，需要转换成str ,,send_flag.decode()
+        if not send_flag:  # 如果取不到标记，则说明验证码过期
+            return ErrorResponse(msg="短信验证码已过期")
+        else:
+            if str(send_flag.decode()) != str(code):
+                return ErrorResponse(msg="验证码错误")
+            #开始更换密码
+            user = Users.objects.filter(username=mobile,identity=2).first()
+            if not user:
+                return ErrorResponse(msg="用户不存在")
+            if not user.is_active:
+                return ErrorResponse(msg="该账号已被禁用，请联系管理员")
+            # 重置密码
+            user.password = make_password(password)
+            user.save()
+            redis_conn.delete('sms_%s' % mobile)
+            return SuccessResponse(msg="success")
