@@ -1,39 +1,38 @@
 # Djangox
 
-Djangox is a Django-based project template designed to kickstart your Django web application development. It comes pre-configured with essential settings and a set of commonly used Django apps to provide a solid foundation for your project.
+Djangox 是一个基于 Django 的项目模板，旨在快速开发 Django Web 应用程序开发，支持 **python3.8** 及以上版本。
 
-## Features
+预配置了基本设置和一组常用的 Django 开发组件，为您的项目提供坚实的基础。
 
-- Pre-configured Django settings for development and production environments.
-- Custom user model setup.
-- Static files and media files configuration.
-- Django admin customization.
-- Basic authentication and permissions setup.
-- Example app (`user`) included to get started.
+它的目的是让你可以直接用它作为你新项目的基础架构，本仓库作为模板库公开，任何人或企业均可免费使用
 
-## Why this project exists
-1. I want to create a Django project template that is easy to use and provides a solid foundation for building web applications.
-2. I want to share my knowledge and experience with the Django community and help others get started with Django development.
-3. I want to contribute to the open-source community and give back to the community that has helped me grow as a developer.
-4. I want to create a project that is well-documented and maintained to ensure its longevity and usefulness to others.
-5. I want to create a project that is easy to customize and extend to meet the needs of different projects and developers.
-6. I want to create a project that is actively developed and improved over time to keep up with the latest Django releases and best practices.
-7. I want to create a project that is well-tested and reliable to ensure its quality and stability in production environments.
-8. I want to create a project that is open to contributions and feedback from the community to make it better and more useful to others.
-9. I want to create a project that is licensed under an open-source license to allow others to use, modify, and distribute it freely.
-10. I want to create a project that is well-documented and maintained to ensure its longevity and usefulness to others.
+## 特征
+- [x] Pytest 单元测试
+- [x] 全局自定义时区时间
+- [ ] Celery 异步任务
+- [ ] JWT 中间件白名单认证
+- [ ] Docker / Docker-compose 部署
 
-## Features
-1. A Django-based project template for quickly starting Django web application development.
-2. A free, simple, fast, efficient, and flexible Django project template.
-3. Pre-configured Django settings suitable for both development and production environments.
-4. Built-in various custom plugins, such as: JWT, RESTful API, Swagger, etc.
-## Requirements
 
-- Python 3.8 or newer
-- Django 5.0.6
+## 内置功能
 
-## Installation
+1. [ ] 用户管理：系统用户角色管理，权限分配
+2. [ ] 操作日志：系统正常和异常操作的日志记录与查询
+3. [x] 登录认证：图形验证码后台认证登录
+4. [ ] 登录日志：用户正常和异常登录的日志记录与查询
+5. [ ] 服务监控：服务器硬件设备信息与状态
+6. [ ] 定时任务：自动化任务，异步任务，支持函数调用
+7. [x] 接口文档：自动生成在线交互式 API 接口文档
+
+
+## 本地开发
+
+* Python 3.10+
+* Mysql 8.0+
+* Redis 推荐最新稳定版
+* Django 4.0+
+
+## 安装
 
 1. Clone the repository:
    ```
@@ -57,24 +56,15 @@ Djangox is a Django-based project template designed to kickstart your Django web
    python manage.py runserver
    ```
 
-## Configuration
 
-- **Secret Key**: Make sure to change the `SECRET_KEY` in `settings.py` for production use.
-- **Database**: Configure your database settings in `settings.py` under the `DATABASES` section.
-- **Static and Media Files**: Set up your static and media files paths and storage for production.
+## 配置
 
-## Deployment
+- **密钥**：确保更改“settings.py”中的“SECRET_KEY”以供生产使用。
+- **数据库**：在“数据库”部分下的“settings.py”中配置数据库设置。
+- **静态和媒体文件**：设置静态和媒体文件的路径和存储以进行生产。
 
-Refer to the Django deployment checklist for best practices on deploying your application to a production environment: https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
+## 许可证
 
-## Contributing
+本项目由 [MIT](https://github.com/tao-xiaoxin/DjangoX/blob/main/LICENSE) 许可证的条款进行许可
 
-Contributions are welcome! Please open an issue or submit a pull request with your improvements or suggestions.
-
-## License
-
-This project is licensed under the Apache License, Version 2.0. You may not use this file except in compliance with the License. You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+[![Stargazers over time](https://starchart.cc/tao-xiaoxin/DjangoX.svg?variant=adaptive)](https://starchart.cc/tao-xiaoxin/DjangoX)
