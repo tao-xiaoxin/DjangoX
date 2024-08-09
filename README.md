@@ -1,5 +1,7 @@
 # Djangox
 
+[![img](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/tao-xiaoxin/DjangoX/blob/main/LICENSE)  [![img](https://img.shields.io/badge/python-%3E=3.8.x-green.svg)](https://python.org/)  [![PyPI - Django Version badge](https://img.shields.io/badge/django%20versions-4.1.8-blue)](https://docs.djangoproject.com/zh-hans/4.1.8/)
+
 Djangox 是一个基于 Django 的项目模板，旨在快速开发 Django Web 应用程序开发，支持 **python3.8** 及以上版本。
 
 预配置了基本设置和一组常用的 Django 开发组件，为您的项目提供坚实的基础。
