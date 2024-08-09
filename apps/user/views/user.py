@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from utils.json_response import SuccessResponse, ErrorResponse
-from utils.common import get_parameter_dic, getRandomSet
+from utils.common import get_parameter_dict, getRandomSet, REGEX_MOBILE
 import re
 from django.db.models import Q, F, Sum
 from rest_framework.serializers import ModelSerializer
@@ -101,7 +101,7 @@ class SetUserNicknameView(APIView):
                          responses={200: 'success'},
                          )
     def post(self, request):
-        nickname = get_parameter_dic(request)['nickname']
+        nickname = get_parameter_dict(request)['nickname']
         if nickname is None:
             return ErrorResponse(msg="昵称不能为空")
         if not isinstance(nickname, str):
@@ -157,7 +157,6 @@ class DestroyUserView(APIView):
             user.is_delete = True
             user.is_active = False
             user.save()
-            OAuthWXUser.objects.filter(user=user).delete()
             return SuccessResponse(data={}, msg="success")
 
 
@@ -166,38 +165,27 @@ class ForgetPasswdResetView(APIView):
     post:
     【功能描述】重置用户密码</br>
     【参数说明】mobile为手机号</br>
-    【参数说明】code短信验证码</br>
     【参数说明】password为密码</br>
     '''
     authentication_classes = []
     permission_classes = []
     def post(self, request, *args, **kwargs):
 
-        mobile = get_parameter_dic(request)['mobile']
-        code = get_parameter_dic(request)['code']
-        password = get_parameter_dic(request)['password']
+        username = get_parameter_dict(request)['username']
+        password = get_parameter_dict(request)['password']
         if len(password) < 6:
             return ErrorResponse(msg="密码长度至少6位")
 
         # 验证手机号是否合法
         if not re.match(REGEX_MOBILE, mobile):
             return ErrorResponse(msg="请输入正确手机号")
-        # 判断短信验证码是否正确
-        redis_conn = get_redis_connection('verify_codes')
-        send_flag = redis_conn.get('sms_%s'%mobile)#send_flag的值为bytes，需要转换成str ,,send_flag.decode()
-        if not send_flag:  # 如果取不到标记，则说明验证码过期
-            return ErrorResponse(msg="短信验证码已过期")
-        else:
-            if str(send_flag.decode()) != str(code):
-                return ErrorResponse(msg="验证码错误")
-            #开始更换密码
-            user = Users.objects.filter(username=mobile,identity=2).first()
-            if not user:
-                return ErrorResponse(msg="用户不存在")
-            if not user.is_active:
-                return ErrorResponse(msg="该账号已被禁用，请联系管理员")
-            # 重置密码
-            user.password = make_password(password)
-            user.save()
-            redis_conn.delete('sms_%s' % mobile)
-            return SuccessResponse(msg="success")
+        #开始更换密码
+        user = Users.objects.filter(username=mobile,identity=2).first()
+        if not user:
+            return ErrorResponse(msg="用户不存在")
+        if not user.is_active:
+            return ErrorResponse(msg="该账号已被禁用，请联系管理员")
+        # 重置密码
+        user.password = make_password(password)
+        user.save()
+        return SuccessResponse(msg="success")

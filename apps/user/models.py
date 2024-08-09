@@ -24,7 +24,7 @@ class Users(AbstractUser, BaseModel):
     user_id = models.AutoField(primary_key=True, help_text="用户ID", verbose_name="用户ID")
     username = models.CharField(max_length=50, unique=True, db_index=True, verbose_name='用户账号',
                                 help_text="用户账号")
-    email = models.EmailField(max_length=60, verbose_name="邮箱", null=True, blank=True, help_text="邮箱")
+    email = models.EmailField(max_length=60, verbose_name="邮箱", help_text="邮箱")
     mobile = models.CharField(max_length=30, verbose_name="电话", null=True, blank=True, help_text="电话")
     avatar = models.CharField(max_length=200, verbose_name="头像", null=True, blank=True, help_text="头像")
     nickname = models.CharField(max_length=100, help_text="用户昵称", verbose_name="用户昵称", default="")

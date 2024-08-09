@@ -145,7 +145,7 @@ def geturlpath(url):
 # 获取get 或 post的参数
 # 使用方法：get_parameter_dic(request)['name'] ,name为获取的参数名 ,此种方式获取name不存在则会报错返回name表示name不存在，需要此参数
 # get_parameter_dic(request).get('name') ,name为获取的参数名 ,此种方式获取name不存在不会报错，不存在会返回None
-def get_parameter_dic(request, *args, **kwargs):
+def get_parameter_dict(request, *args, **kwargs):
     if isinstance(request, Request) == False:
         return {}
 
