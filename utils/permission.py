@@ -44,16 +44,4 @@ class CustomPermission(BasePermission):
         # 判断是否是超级管理员
         if request.user.is_superuser:
             return True
-        else:
-            api = request.path  # 当前请求接口
-            # method = request.method  # 当前请求方法
-            # methodList = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
-            # method = methodList.index(method)
-            # if not hasattr(request.user, "role"):
-            #     return False
-            # userApiList = request.user.role.values('permission__api', 'permission__method')  # 获取当前用户的角色拥有的所有接口
-            # for item in userApiList:
-            #     valid = ValidationApi(api, item.get('permission__api'))
-            #     if valid and (method == item.get('permission__method')):
-            #         return True
         return False

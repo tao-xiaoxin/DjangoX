@@ -127,9 +127,9 @@ class DestroyUserView(APIView):
     def post(self, request, *args, **kwargs):
         user = request.user
         if user.identity in [0, 1]:
-            return ErrorResponse(msg="该用户不支持注销")
+            return ErrorResponse(msg="该用户不支持注销!")
         if '(已注销)' in user.username:
-            return ErrorResponse(msg="该用户已注销或不支持注销")
+            return ErrorResponse(msg="该用户已注销或不支持注销!")
         with transaction.atomic():
             randstr = getRandomSet(6)
             user.username = user.username + "(已注销)" + randstr
@@ -137,7 +137,7 @@ class DestroyUserView(APIView):
             user.is_delete = True
             user.is_active = False
             user.save()
-            return SuccessResponse(data={}, msg="success")
+            return DetailResponse(msg="success")
 
 
 class ForgetPasswdResetView(APIView):
