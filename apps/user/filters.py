@@ -1,6 +1,11 @@
+# -*- coding: utf-8 -*-
+
+"""
+@Remark: 用户相关过滤器
+"""
 import django_filters
 from django_filters.rest_framework import FilterSet
-from ..models import Users
+from .models import Users
 
 
 class UsersManageTimeFilter(FilterSet):
