@@ -10,8 +10,8 @@ user_url = routers.SimpleRouter()
 user_url.register(r'users', UserManageViewSet)
 
 urlpatterns = [
-    re_path('disableuser/(?P<pk>.*?)/', UserManageViewSet.as_view({'put': 'disableuser'}), name='后台禁用用户'),
-    path('export_users/', UserManageViewSet.as_view({'get': 'exportexecl'}), name='导出用户信息'),
+    re_path('disable_user/(?P<pk>.*?)/', UserManageViewSet.as_view({'put': 'disable_user'}), name='后台禁用用户'),
+    path('export_users/', UserManageViewSet.as_view({'get': 'export_execl'}), name='导出用户信息'),
     path('restpassword/', ForgetPasswdResetView.as_view(), name='忘记密码重置密码'),
     re_path('user_info/(?P<pk>.*?)/', UserManageViewSet.as_view({"get": "userinfo"}), name='获取用户信息'),
     # 修改用户信息

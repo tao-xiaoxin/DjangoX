@@ -12,11 +12,7 @@ class UserManageSerializer(CustomModelSerializer):
     class Meta:
         model = Users
         read_only_fields = ["user_id"]
-        exclude = ['password', 'role', 'post', 'dept']
-        extra_kwargs = {
-            'post': {'required': False},
-            'role': {'required': False},
-        }
+        exclude = ['password']
 
 
 class UserManageCreateSerializer(CustomModelSerializer):
@@ -34,14 +30,8 @@ class UserManageCreateSerializer(CustomModelSerializer):
 
     class Meta:
         model = Users
-        read_only_fields = ["id"]
-        exclude = ['role', 'post', 'dept']
-        extra_kwargs = {
-            'post': {'required': False},
-            'role': {'required': False},
-            'name': {'required': False},
-            'password': {'required': False},
-        }
+        read_only_fields = ["user_id"]
+        extra_kwargs = {'password': {'required': False}, }
 
 
 class UserManageUpdateSerializer(CustomModelSerializer):
@@ -60,12 +50,8 @@ class UserManageUpdateSerializer(CustomModelSerializer):
 
     class Meta:
         model = Users
-        read_only_fields = ["id"]
-        exclude = ['role', 'post', 'dept', 'identity']
+        read_only_fields = ["user_id"]
         extra_kwargs = {
-            'post': {'required': False},
-            'role': {'required': False},
-            'name': {'required': False},
             'password': {'required': False},
         }
 
@@ -76,12 +62,13 @@ class ExportUserManageSerializer(CustomModelSerializer):
     """
     is_active_name = serializers.SerializerMethodField()
 
-    def get_is_active_name(self, obj):
+    class Meta:
+        model = Users
+        fields = ('user_id', 'nickname', 'mobile', 'is_active_name', 'create_time')
+
+    @staticmethod
+    def get_is_active_name(obj):
         if obj.is_active:
             return "正常"
         else:
             return "禁用"
-
-    class Meta:
-        model = Users
-        fields = ('id', 'nickname', 'mobile', 'is_active_name', 'create_datetime')

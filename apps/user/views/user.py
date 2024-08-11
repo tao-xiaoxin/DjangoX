@@ -18,6 +18,8 @@ from utils.filters import UsersManageTimeFilter
 from django.contrib.auth.hashers import make_password
 from utils.export_excel import export_excel
 from django.db import transaction
+from ..serializers.user import (UserManageSerializer, UserManageCreateSerializer, UserManageUpdateSerializer,
+                                ExportUserManageSerializer)
 
 
 # Create your views here.
@@ -28,12 +30,13 @@ class UserManageViewSet(CustomModelViewSet):
     后台用户管理 接口:
     """
     queryset = Users.objects.filter(identity=2).order_by("-create_time")  # 排除管理员
-    # serializer_class = UserManageSerializer
-    # create_serializer_class = UserManageCreateSerializer
-    # update_serializer_class = UserManageUpdateSerializer
+    serializer_class = UserManageSerializer
+    create_serializer_class = UserManageCreateSerializer
+    update_serializer_class = UserManageUpdateSerializer
     filterset_class = UsersManageTimeFilter
 
-    def disableuser(self, request, *args, **kwargs):
+    @staticmethod
+    def disable_user(request, *args, **kwargs):
         """禁用用户"""
         instance = Users.objects.filter(user_id=kwargs.get('pk')).first()
         if instance:
@@ -42,11 +45,11 @@ class UserManageViewSet(CustomModelViewSet):
             else:
                 instance.is_active = True
             instance.save()
-            return SuccessResponse(data=None, msg="修改成功")
+            return DetailResponse(data=None, msg="修改成功！")
         else:
-            return ErrorResponse(msg="未获取到用户")
+            return ErrorResponse(msg="未获取到用户！")
 
-    def exportexecl(self, request):
+    def export_execl(self, request):
         field_data = ['主键', '昵称', '手机号', '状态', '创建时间']
         queryset = self.filter_queryset(self.get_queryset())
         data = ExportUserManageSerializer(queryset, many=True).data

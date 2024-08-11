@@ -29,19 +29,59 @@ def ValidationApi(reqApi, validApi):
 
 class CustomPermission(BasePermission):
     """自定义权限"""
-
+    # Todo 根据业务需要自行定义权限
     def has_permission(self, request, view):
+        """
+        根据业务需要自行定义权限
+        """
         # 对ViewSet下的def方法进行权限判断
         # 当权限为空时,则可以访问
-        is_head = getattr(view, 'head', None)
-        if is_head:
-            head_kwargs = getattr(view.head, 'kwargs', None)
-            if head_kwargs:
-                _permission_classes = getattr(head_kwargs, 'permission_classes', None)
-                if _permission_classes is None:
-                    return True
+        # is_head = getattr(view, 'head', None)
+        # if is_head:
+        #     head_kwargs = getattr(view.head, 'kwargs', None)
+        #     if head_kwargs:
+        #         _permission_classes = getattr(head_kwargs, 'permission_classes', None)
+        #         if _permission_classes is None:
+        #             return True
+        #
+        # # 判断是否是超级管理员
+        # # if request.user.is_superuser:
+        # #     return True
+        # return False
+        return True
 
-        # 判断是否是超级管理员
-        if request.user.is_superuser:
-            return True
-        return False
+# class CustomPermission(BasePermission):
+#     """自定义权限"""
+#
+#     def has_permission(self, request, view):
+#
+#         # 演示模式判断
+#         if IS_DEMO and not request.method in ['GET', 'OPTIONS']:
+#             raise ValidationError('演示模式，不允许操作!', 400)
+#             return False
+#         # 对ViewSet下的def方法进行权限判断
+#         # 当权限为空时,则可以访问
+#         is_head = getattr(view, 'head', None)
+#         if is_head:
+#             head_kwargs = getattr(view.head, 'kwargs', None)
+#             if head_kwargs:
+#                 _permission_classes = getattr(head_kwargs, 'permission_classes', None)
+#                 if _permission_classes is None:
+#                     return True
+#
+#         # 判断是否是超级管理员
+#         if request.user.is_superuser:
+#             return True
+#         else:
+#             api = request.path  # 当前请求接口
+#             method = request.method  # 当前请求方法
+#             methodList = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
+#             method = methodList.index(method)
+#             if not hasattr(request.user, "role"):
+#                 return False
+#             userApiList = request.user.role.values('permission__api', 'permission__method')  # 获取当前用户的角色拥有的所有接口
+#             for item in userApiList:
+#                 valid = ValidationApi(api, item.get('permission__api'))
+#                 if valid and (method == item.get('permission__method')):
+#                     return True
+#         return False
