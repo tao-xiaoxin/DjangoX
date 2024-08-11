@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from utils.json_response import SuccessResponse, ErrorResponse
+from utils.json_response import SuccessResponse, ErrorResponse, DetailResponse
 from utils.common import get_parameter_dict, getRandomSet, REGEX_MOBILE
 import re
 from django.db.models import Q, F, Sum
@@ -12,12 +12,13 @@ from utils.viewset import CustomModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from utils.image_upload import ImageUpload
+from utils.validator import CustomValidationError
 from ..models import Users
 from utils.filters import UsersManageTimeFilter
 from django.contrib.auth.hashers import make_password
 from utils.export_excel import export_excel
 from django.db import transaction
+
 
 # Create your views here.
 
@@ -34,7 +35,7 @@ class UserManageViewSet(CustomModelViewSet):
 
     def disableuser(self, request, *args, **kwargs):
         """禁用用户"""
-        instance = Users.objects.filter(id=kwargs.get('pk')).first()
+        instance = Users.objects.filter(user_id=kwargs.get('pk')).first()
         if instance:
             if instance.is_active:
                 instance.is_active = False
@@ -56,25 +57,6 @@ class UserManageViewSet(CustomModelViewSet):
 # ************** 前端用户中心 view  ************** #
 # ================================================= #
 
-# 前端图片上传
-class uploadImagesView(APIView):
-    '''
-    前端图片上传
-    post:
-    【功能描述】前端图片上传</br>
-    【参数说明】无，需要登录携带token后才能调用</br>
-    '''
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        result = ImageUpload(request, "frontendimages")
-        if result['code'] == 200:
-            return SuccessResponse(data=result['img'], msg=result['msg'])
-        else:
-            return ErrorResponse(msg=result['msg'])
-
-
 class SetUserNicknameView(APIView):
     """
     修改昵称
@@ -82,8 +64,6 @@ class SetUserNicknameView(APIView):
     修改昵称
     【参数】nickname:需要修改的用户新昵称
     """
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
 
     # api文档参数
 
@@ -163,24 +143,54 @@ class DestroyUserView(APIView):
 class ForgetPasswdResetView(APIView):
     '''
     post:
-    【功能描述】重置用户密码</br>
+    【功能描述】根据邮箱重置用户密码</br>
     【参数说明】mobile为手机号</br>
     【参数说明】password为密码</br>
     '''
     authentication_classes = []
     permission_classes = []
+
+    @staticmethod
+    def validate_email(email):
+        """
+        验证邮箱是否合法
+        :param email: 邮箱
+        """
+        if not email:
+            raise CustomValidationError("邮箱不能为空!")
+        if not re.match(r'^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$', email):
+            raise CustomValidationError("邮箱格式不正确!")
+        return email
+
+    @staticmethod
+    def validate_password(password, password2):
+        """
+        验证密码
+        :param password: 密码
+        :param password2: 确认密码
+        """
+        if not password or not password2:
+            raise CustomValidationError("密码不能为空!")
+        if len(password) < 6:
+            raise CustomValidationError("密码长度至少6位!")
+        # 密码强度：至少6-20个字符，至少1个大写字母，1个小写字母和1个数字，其他可以是任意字符
+        if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,20}$', password):
+            raise CustomValidationError("密码格式不正确(大小写字母、数字组合)")
+        if password != password2:
+            raise CustomValidationError("两次密码输入不一致!")
+        return password
+
     def post(self, request, *args, **kwargs):
 
-        username = get_parameter_dict(request)['username']
-        password = get_parameter_dict(request)['password']
-        if len(password) < 6:
-            return ErrorResponse(msg="密码长度至少6位")
-
-        # 验证手机号是否合法
-        if not re.match(REGEX_MOBILE, mobile):
-            return ErrorResponse(msg="请输入正确手机号")
-        #开始更换密码
-        user = Users.objects.filter(username=mobile,identity=2).first()
+        email = get_parameter_dict(request).email
+        password = get_parameter_dict(request).password
+        password2 = get_parameter_dict(request).password2
+        # 验证邮箱
+        email = self.validate_email(email)
+        # 验证密码
+        password = self.validate_password(password, password2)
+        # 开始更换密码
+        user = Users.objects.filter(email=email, identity=2).first()
         if not user:
             return ErrorResponse(msg="用户不存在")
         if not user.is_active:
@@ -188,4 +198,4 @@ class ForgetPasswdResetView(APIView):
         # 重置密码
         user.password = make_password(password)
         user.save()
-        return SuccessResponse(msg="success")
+        return DetailResponse(msg="密码重置成功！")

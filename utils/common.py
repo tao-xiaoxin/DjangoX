@@ -142,12 +142,20 @@ def geturlpath(url):
 """
 
 
+# Define the ParameterDict class
+class ParameterDict:
+    def __init__(self, data):
+        self.__dict__.update(data)
+
+    def __getattr__(self, item):
+        return self.__dict__.get(item, None)
+
+
 # 获取get 或 post的参数
-# 使用方法：get_parameter_dic(request)['name'] ,name为获取的参数名 ,此种方式获取name不存在则会报错返回name表示name不存在，需要此参数
-# get_parameter_dic(request).get('name') ,name为获取的参数名 ,此种方式获取name不存在不会报错，不存在会返回None
+# 使用方法：get_parameter_dic(request).name ,name为获取的参数名 ,此种方式获取name不存在不会报错，不存在会返回None
 def get_parameter_dict(request, *args, **kwargs):
-    if isinstance(request, Request) == False:
-        return {}
+    if not isinstance(request, Request):
+        return ParameterDict({})
 
     query_params = request.query_params
     if isinstance(query_params, QueryDict):
@@ -156,10 +164,10 @@ def get_parameter_dict(request, *args, **kwargs):
     if isinstance(result_data, QueryDict):
         result_data = result_data.dict()
 
-    if query_params != {}:
-        return query_params
+    if query_params:
+        return ParameterDict(query_params)
     else:
-        return result_data
+        return ParameterDict(result_data)
 
 
 """
