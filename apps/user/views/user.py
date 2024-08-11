@@ -20,6 +20,8 @@ from utils.export_excel import export_excel
 from django.db import transaction
 from ..serializers.user import (UserManageSerializer, UserManageCreateSerializer, UserManageUpdateSerializer,
                                 ExportUserManageSerializer)
+from rest_framework import viewsets
+from utils.file_upload import file_upload
 
 
 # Create your views here.
@@ -27,9 +29,9 @@ from ..serializers.user import (UserManageSerializer, UserManageCreateSerializer
 
 class UserManageViewSet(CustomModelViewSet):
     """
-    后台用户管理 接口:
+    后台用户管理
     """
-    queryset = Users.objects.filter(identity=2).order_by("-create_time")  # 排除管理员
+    queryset = Users.objects.order_by("-create_time")
     serializer_class = UserManageSerializer
     create_serializer_class = UserManageCreateSerializer
     update_serializer_class = UserManageUpdateSerializer
@@ -49,75 +51,95 @@ class UserManageViewSet(CustomModelViewSet):
         else:
             return ErrorResponse(msg="未获取到用户！")
 
-    def export_execl(self, request):
-        field_data = ['主键', '昵称', '手机号', '状态', '创建时间']
+    def export(self, request):
+        """
+        导出用户数据
+        """
+        field_data = ['用户ID', '昵称', '手机号', '状态', '创建时间']
         queryset = self.filter_queryset(self.get_queryset())
         data = ExportUserManageSerializer(queryset, many=True).data
         return SuccessResponse(data=export_excel(request, field_data, data, '用户数据.xls'), msg='success')
 
 
-# ================================================= #
-# ************** 前端用户中心 view  ************** #
-# ================================================= #
-
-class SetUserNicknameView(APIView):
+class UserCenterViewSet(viewsets.GenericViewSet):
     """
-    修改昵称
-    post:
-    修改昵称
-    【参数】nickname:需要修改的用户新昵称
+    前端用户个人中心
     """
+    queryset = Users.objects.all()
+    serializer_class = UserManageSerializer
 
-    # api文档参数
+    def get_object(self):
+        return self.request.user
 
-    @swagger_auto_schema(operation_summary='app回收员修改昵称',
-                         # manual_parameters=[#GET请求需要
-                         #     # openapi.Parameter("nickname", openapi.IN_QUERY, description="要修改昵称", type=openapi.TYPE_STRING)
-                         # ],
-                         request_body=openapi.Schema(  # POST请求需要
-                             type=openapi.TYPE_OBJECT,
-                             required=['nickname'],
-                             properties={
-                                 'nickname': openapi.Schema(type=openapi.TYPE_STRING, description="要修改昵称"),
-                             },
-                         ),
-                         responses={200: 'success'},
-                         )
-    def post(self, request):
-        nickname = get_parameter_dict(request)['nickname']
+    def me(self, request):
+        """
+        获取当前登录用户的信息
+        """
+        serializer = self.get_serializer(self.get_object())
+        return DetailResponse(serializer.data)
+
+    def set_nickname(self, request):
+        """
+        修改昵称
+        """
+        nickname = get_parameter_dict(request).nickname
         if nickname is None:
-            return ErrorResponse(msg="昵称不能为空")
+            return ErrorResponse(msg="昵称不能为空！")
         if not isinstance(nickname, str):
-            return ErrorResponse(msg='类型错误')
-        user = request.user
+            return ErrorResponse(msg='类型错误！')
+        user = self.get_object()
         user.nickname = nickname
         user.save()
         return SuccessResponse(msg="success")
 
-
-# 前端app头像修改
-class ChangeAvatarView(APIView):
-    '''
-    前端app头像修改
-    post:
-    【功能描述】前端app头像修改</br>
-    【参数说明】无，需要登录携带token后才能调用</br>
-    '''
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        result = ImageUpload(request, "avatar")
+    def change_avatar(self, request):
+        """
+        头像修改
+        """
+        result = file_upload(request, "avatar")
         if result['code'] == 200:
-            user = request.user
-            user.avatar = result['img'][0]
+            user = self.get_object()
+            user.avatar = result['files'][0]
             user.save()
-            return SuccessResponse(data=result['img'], msg=result['msg'])
+            return SuccessResponse(data=result['files'], msg=result['msg'])
         else:
             return ErrorResponse(msg=result['msg'])
 
+    def change_mobile(self, request):
+        """
+        修改手机号
+        """
+        mobile = get_parameter_dict(request).mobile
+        if not re.match(REGEX_MOBILE, mobile):
+            return ErrorResponse(msg="手机号格式不正确！")
+        try:
+            Users.objects.get(mobile=mobile)
+            return ErrorResponse(msg="该手机号已经注册，请跟换手机号！")
+        except Users.DoesNotExist:
+            pass
+        user = self.get_object()
+        user.mobile = mobile
+        user.save()
+        return SuccessResponse(msg="success")
 
-# 注销账号(标记已注销)
+    def change_email(self, request):
+        """
+        修改邮箱
+        """
+        email = get_parameter_dict(request).email
+        if not email:
+            return ErrorResponse(msg="邮箱不能为空！")
+        try:
+            Users.objects.get(email=email)
+            return ErrorResponse(msg="该邮箱已经注册，请跟换邮箱！")
+        except Users.DoesNotExist:
+            pass
+        user = self.get_object()
+        user.email = email
+        user.save()
+        return SuccessResponse(msg="success")
+
+
 class DestroyUserView(APIView):
     '''
     注销账号(标记已注销)

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from utils.image_upload import file_upload
+from utils.file_upload import file_upload
 from utils.json_response import DetailResponse, ErrorResponse
 
 

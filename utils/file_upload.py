@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-@Remark: 自定义图片上传
+@Remark: 自定义文件图片上传
 """
 import os
 import datetime

@@ -30,6 +30,7 @@ class UserManageCreateSerializer(CustomModelSerializer):
 
     class Meta:
         model = Users
+        fields = "__all__"
         read_only_fields = ["user_id"]
         extra_kwargs = {'password': {'required': False}, }
 
@@ -50,6 +51,7 @@ class UserManageUpdateSerializer(CustomModelSerializer):
 
     class Meta:
         model = Users
+        fields = '__all__'
         read_only_fields = ["user_id"]
         extra_kwargs = {
             'password': {'required': False},

@@ -117,9 +117,9 @@ class UsersManageTimeFilter(django_filters.rest_framework.FilterSet):
     自定义字段名可以和模型中不一致，但一定要用参数field_name指明对应模型中的字段名
     """
     #开始时间
-    beginAt = django_filters.DateTimeFilter(field_name='create_datetime', lookup_expr='gte')  # 指定过滤的字段
+    start_time = django_filters.DateTimeFilter(field_name='create_time', lookup_expr='gte')  # 指定过滤的字段
     #结束时间
-    endAt = django_filters.DateTimeFilter(field_name='create_datetime', lookup_expr='lte')
+    end_time = django_filters.DateTimeFilter(field_name='create_time', lookup_expr='lte')
     # 模糊搜索
     username = django_filters.CharFilter(field_name='username', lookup_expr='icontains')  # icontains表示该字段模糊搜索
     # 模糊搜索
@@ -132,4 +132,4 @@ class UsersManageTimeFilter(django_filters.rest_framework.FilterSet):
 
     class Meta:
         model = Users
-        fields = ['beginAt', 'endAt','username','mobile','is_active','nickname','name']
+        fields = ['end_time', 'end_time','username','mobile','is_active','nickname','name']
