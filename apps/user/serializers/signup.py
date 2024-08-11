@@ -45,8 +45,9 @@ class SignUpSerializer(serializers.ModelSerializer):
                                       }
                                       )
 
-    email = serializers.EmailField(max_length=60, help_text="邮箱", required=False, allow_blank=True, allow_null=True,
+    email = serializers.EmailField(max_length=60, help_text="邮箱",
                                    error_messages={
+                                       "blank": "邮箱不可以为空!",
                                        "invalid": "请输入有效的邮箱地址!",
                                        "max_length": "邮箱长度不能超过60个字符!"
                                    }
@@ -190,7 +191,8 @@ class SignUpSerializer(serializers.ModelSerializer):
             avatar=avatar,
             nickname=nickname,
             gender=gender,
-            identity=2
+            identity=2,
+            is_active=True,
         )
         # Generate token
         refresh = RefreshToken.for_user(user)

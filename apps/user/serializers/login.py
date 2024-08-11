@@ -4,7 +4,7 @@ from ..models import Users
 from datetime import datetime, timedelta
 from captcha.views import CaptchaStore
 from utils.validator import CustomValidationError
-# from utils.request_util import save_login_log
+from utils.request_util import save_login_log
 from django.conf import settings
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -81,7 +81,7 @@ class LoginSerializer(serializers.ModelSerializer):
         }
         self.context["data"] = data
         # 记录登录成功日志
-        # save_login_log(request=request)
+        save_login_log(request=request)
         return attrs
 
     @staticmethod

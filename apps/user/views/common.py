@@ -27,6 +27,7 @@ class CaptchaRefresh(APIView):
     获取/刷新 图片验证码
     """
     authentication_classes = []
+    permission_classes = []
 
     @swagger_auto_schema(
         responses={
