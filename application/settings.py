@@ -65,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "utils.middleware.ApiLoggingMiddleware",  # 记录API访问日志中间件
 ]
 
 ROOT_URLCONF = 'application.urls'
@@ -489,4 +490,12 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = 'None'
 AUTH_USER_MODEL = 'user.Users'
 USERNAME_FIELD = 'username'
 table_prefix = table_prefix  # 数据库表名前缀
-APPEND_SLASH = False
+
+# 中间件日志配置
+APPEND_SLASH = False  # 默认是True，就是自动加斜杠
+API_LOG_ENABLE = API_LOG_ENABLE  # 全局控制日志记录
+# API_LOG_METHODS = 'ALL' # ['POST', 'DELETE']
+API_LOG_METHODS = API_LOG_METHODS
+# 日志记录显示的请求模块中文名映射
+API_MODEL_MAP = API_MODEL_MAP
+

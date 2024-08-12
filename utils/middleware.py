@@ -1,38 +1,23 @@
 """
 日志 django中间件
 """
-import json,re
-
-from django.conf import settings
+import json, re
+import logging
 from django.utils.deprecation import MiddlewareMixin
 
 from apps.system.models import OperationLog
-from utils.request_util import get_request_user, get_request_ip, get_request_data, get_request_path, get_os,get_browser, get_verbose_name
+from utils.request_util import get_request_user, get_request_ip, get_request_data, get_request_path, get_os, \
+    get_browser, get_verbose_name
 
-from django.http import HttpResponseForbidden,HttpResponse
-from config import ALLOW_FRONTEND,FRONTEND_API_LIST,IS_SINGLE_TOKEN
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication,JWTTokenUserAuthentication
-from rest_framework.views import APIView
-from .json_response import SuccessResponse,ErrorResponse
-from utils.common import get_parameter_dic
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
+from django.http import HttpResponseForbidden, HttpResponse
+from rest_framework_simplejwt.authentication import JWTTokenUserAuthentication
 from django_redis import get_redis_connection
-
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser, User
-from channels.auth import AuthMiddlewareStack
-from channels.db import database_sync_to_async
-from channels.middleware import BaseMiddleware
-from django.db import close_old_connections
-from jwt import decode as jwt_decode
-from rest_framework_simplejwt.authentication import AUTH_HEADER_TYPE_BYTES
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.tokens import UntypedToken
+from django.contrib.auth.models import AnonymousUser
+import hashlib
+import time
 from django.http import JsonResponse
+from django.conf import settings
 
-IS_ALLOW_FRONTEND = ALLOW_FRONTEND
 
 class ApiLoggingMiddleware(MiddlewareMixin):
     """
@@ -57,7 +42,8 @@ class ApiLoggingMiddleware(MiddlewareMixin):
         # 请求含有password则用*替换掉(暂时先用于所有接口的password请求参数)
         if isinstance(body, dict) and body.get('password', ''):
             body['password'] = '*' * len(body['password'])
-        if isinstance(body, dict) and body.get('oldPassword', '') and body.get('newPassword', '') and body.get('newPassword2', ''):
+        if isinstance(body, dict) and body.get('oldPassword', '') and body.get('newPassword', '') and body.get(
+                'newPassword2', ''):
             body['oldPassword'] = '*' * len(body['oldPassword'])
             body['newPassword'] = '*' * len(body['newPassword'])
             body['newPassword2'] = '*' * len(body['newPassword2'])
@@ -90,7 +76,14 @@ class ApiLoggingMiddleware(MiddlewareMixin):
         else:
             temp_request_modular = self.request_modular
 
-        operation_log = OperationLog.objects.create(request_modular=temp_request_modular,request_ip=info['request_ip'],creator=info['creator'],dept_belong_id=info['dept_belong_id'],request_method=info['request_method'],request_path=info['request_path'],request_body=info['request_body'],response_code=info['response_code'],request_os=info['request_os'],request_browser=info['request_browser'],request_msg=info['request_msg'],status=info['status'],json_result=info['json_result'])
+        operation_log = OperationLog.objects.create(request_modular=temp_request_modular, request_ip=info['request_ip'],
+                                                    creator=info['creator'], request_method=info['request_method'],
+                                                    request_path=info['request_path'],
+                                                    request_body=info['request_body'],
+                                                    response_code=info['response_code'], request_os=info['request_os'],
+                                                    request_browser=info['request_browser'],
+                                                    request_msg=info['request_msg'], status=info['status'],
+                                                    json_result=info['json_result'])
 
         self.request_modular = ""
 
@@ -101,29 +94,9 @@ class ApiLoggingMiddleware(MiddlewareMixin):
                     self.request_modular = get_verbose_name(view_func.cls.queryset)
 
         return None
+
     def process_request(self, request):
         self.__handle_request(request)
-
-        if IS_SINGLE_TOKEN:#保证设备登录的唯一性
-            if request.request_path[0:9] not in FRONTEND_API_LIST:
-                jwt_token = request.META.get('HTTP_AUTHORIZATION', None)
-                if jwt_token and 'JWT' in jwt_token and jwt_token.split('JWT ')[1]!='null':
-                    errordata = {'msg': '身份认证已经过期，请重新登入', 'code': 4001, 'data': ''}
-                    try:
-                        user,token = JWTTokenUserAuthentication().authenticate(request)
-                        redis_conn = get_redis_connection("singletoken")
-                        k = "lybbn-single-token{}".format(user.id)
-                        cache_token = redis_conn.get(k)
-                        if cache_token:
-                            if not str(token) == str(cache_token):
-                                return HttpResponse(json.dumps(errordata), content_type='application/json',status=200,charset='utf-8')
-                        else:
-                            return HttpResponse(json.dumps(errordata), content_type='application/json',status=200,charset='utf-8')
-                    except Exception as e:
-                        print(e)
-                        return HttpResponse(json.dumps(errordata), content_type='application/json',status=200,charset='utf-8')
-
-
 
     def process_response(self, request, response):
         """
@@ -136,195 +109,14 @@ class ApiLoggingMiddleware(MiddlewareMixin):
             if self.methods == 'ALL' or request.method in self.methods:
                 self.__handle_response(request, response)
 
-        # 过滤前端接口关闭情况
-        if not IS_ALLOW_FRONTEND:
-            if FRONTEND_API_LIST:
-                for i in FRONTEND_API_LIST:
-                    if i in request.request_path:
-                        return HttpResponseForbidden('<h1>Access Forbidden 301</h1>')
-
         return response
 
-class OperateAllowFrontendView(APIView):
+
+class StandardJSONMiddleware(MiddlewareMixin):
     """
-    超级管理员动态启用/禁用/获取 禁止前端接口访问
-    get:
-    获取当前是否禁止前端访问的值
-    【参数】无
-    post:
-    设置当前是否禁止前端访问
-    【参数】is_allow = 1 允许访问  0 禁止访问
+    标准化JSON响应中间件
     """
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
 
-    def get(self, request):
-        """
-        获取当前是否禁止前端访问的值
-        """
-        data = {
-            'is_allow':IS_ALLOW_FRONTEND
-        }
-        return SuccessResponse(data=data,msg='success')
-
-    @swagger_auto_schema(operation_summary='设置当前是否禁止前端访问',
-    request_body=openapi.Schema(#POST请求需要
-        type=openapi.TYPE_OBJECT,
-        required=['is_allow'],
-        properties={
-                'is_allow':openapi.Schema(type=openapi.TYPE_INTEGER,description="1允许访问,0 禁止访问"),
-             },
-        ),
-    responses={200:'success'},
-    )
-    def post(self,request):
-        """
-        设置当前是否禁止前端访问
-        """
-        user = request.user
-        if user.is_superuser:
-            global IS_ALLOW_FRONTEND
-            is_allow = int(get_parameter_dic(request)['is_allow'])
-
-            if is_allow:
-                IS_ALLOW_FRONTEND = True
-            else:
-                IS_ALLOW_FRONTEND = False
-            data = {
-                'is_allow': IS_ALLOW_FRONTEND
-            }
-            return SuccessResponse(data=data,msg='设置成功')
-        else:
-            return ErrorResponse(msg="您没有权限操作")
-
-# ======================================================================= #
-# ************** channels websocket使用simple-jwt 认证/权限验证中间件  ************** #
-# ======================================================================= #
-#该中间件可以在channels里通过 self.scope["user"] 获取到一个用户实例
-
-@database_sync_to_async
-def get_user(validated_token):
-    try:
-        user = get_user_model().objects.get(id=validated_token["user_id"])
-        return user
-
-    except User.DoesNotExist:
-        return AnonymousUser()
-
-def ValidationApi(reqApi, validApi):
-    """
-    验证当前用户是否有接口权限
-    :param reqApi: 当前请求的接口
-    :param validApi: 用于验证的接口
-    :return: True或者False
-    """
-    if validApi is not None:
-        valid_api = validApi.replace('{id}', '.*?')
-        matchObj = re.match(valid_api, reqApi, re.M | re.I)
-        if matchObj:
-            return True
-        else:
-            return False
-    else:
-        return False
-
-@database_sync_to_async
-def has_permission(user, path):
-    """
-    接口地址、方法授权验证
-    """
-    # 判断是否是超级管理员
-    if user.is_superuser:
-        return True
-    else:
-        api = path  # 当前请求接口
-        method = "WS"  # 当前请求方法
-        methodList = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','WS']
-        method = methodList.index(method)
-        if not hasattr(user, "role"):
-            return False
-        userApiList = user.role.values('permission__api', 'permission__method')  # 获取当前用户的角色拥有的所有接口
-        for item in userApiList:
-            valid = ValidationApi(api, item.get('permission__api'))
-            if valid and (method == item.get('permission__method')):
-                return True
-    return False
-
-class JwtAuthMiddleware(BaseMiddleware):
-    def __init__(self, inner):
-        self.inner = inner
-
-    async def __call__(self, scope, receive, send):
-        # 关闭旧的数据库连接，以防止使用超时的连接
-        close_old_connections()
-        # 自定义校验逻辑,获取子协议内容
-        protocol = dict(scope['headers']).get(b'sec-websocket-protocol', b'')
-        # print(protocol)
-        if len(protocol) == 0:
-            # Empty AUTHORIZATION header sent
-            return None
-
-        alltoken = protocol.split(b', ')
-
-        if not len(alltoken) == 2:
-            return None
-
-        if not alltoken[0] == b'JWTLYADMIN':
-            return None
-
-        parts = alltoken[1].split(b'lybbn')
-        if len(parts) == 0:
-            return None
-
-        if parts[0] not in AUTH_HEADER_TYPE_BYTES:
-            # Assume the header does not contain a JSON web token
-            return None
-
-        if len(parts) != 2:
-            return None
-
-        token = parts[1]
-        # Get the token
-        # Try to authenticate the user
-        try:
-            # This will automatically validate the token and raise an error if token is invalid
-            UntypedToken(token)
-        except (InvalidToken, TokenError) as e:
-            # Token is invalid
-            # print(e,'InvalidToken,TokenError')
-            return None
-        else:
-            #  Then token is valid, decode it
-            decoded_data = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-            # print(decoded_data,'success decode token')
-            # Will return a dictionary like -
-            # {
-            #     "token_type": "access",
-            #     "exp": 1568770772,
-            #     "jti": "5c15e80d65b04c20ad34d77b6703251b",
-            #     "user_id": 6
-            # }
-
-            # Get the user using ID
-            scope["user"] = await get_user(validated_token=decoded_data)
-            user = scope['user']
-            if isinstance(user, AnonymousUser):
-                return None
-            if not user.is_active:
-                return None
-            path = scope['path']
-            haspermission = await has_permission(user,path)
-            if not haspermission:
-                return None
-
-        return await super().__call__(scope, receive, send)
-
-def JwtAuthMiddlewareStack(inner):
-    return JwtAuthMiddleware(AuthMiddlewareStack(inner))
-
-
-
-class StandardJSONMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -363,3 +155,114 @@ class StandardJSONMiddleware:
 
         # 如果不是我们处理的异常类型，返回None让Django继续处理
         return None
+
+
+class SignatureMiddleware(MiddlewareMixin):
+    """
+    校验签名中间件,反爬虫
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # 白名单路径,不需要签名验证
+        exempt_paths = ['/api/login', '/api/register']
+        if request.path in exempt_paths:
+            return self.get_response(request)
+
+        # 获取请求头中的签名信息
+        signature = request.headers.get('X-Signature')
+        timestamp = request.headers.get('X-Timestamp')
+        app_key = request.headers.get('X-App-Key')
+
+        if not all([signature, timestamp, app_key]):
+            return JsonResponse({'error': 'Missing signature information'}, status=400)
+
+        # 检查时间戳是否在允许的时间范围内
+        current_time = int(time.time())
+        if abs(current_time - int(timestamp)) > settings.SIGNATURE_EXPIRATION:
+            return JsonResponse({'error': 'Signature expired'}, status=400)
+
+        # 获取 app secret
+        app_secret = settings.APP_SECRETS.get(app_key)
+        if not app_secret:
+            return JsonResponse({'error': 'Invalid app key'}, status=400)
+
+        # 构造签名字符串
+        signature_string = f"{app_key}{timestamp}"
+
+        # 如果是 GET 请求,将查询参数按字母顺序排序后加入签名字符串
+        if request.method == 'GET':
+            params = sorted(request.GET.items())
+            signature_string += ''.join(f"{k}{v}" for k, v in params)
+        # 如果是 POST 请求,将 body 加入签名字符串
+        elif request.method == 'POST':
+            signature_string += request.body.decode()
+
+        # 计算签名
+        calculated_signature = hashlib.md5((signature_string + app_secret).encode()).hexdigest()
+
+        # 验证签名
+        if calculated_signature != signature:
+            return JsonResponse({'error': 'Invalid signature'}, status=400)
+
+        return self.get_response(request)
+
+
+class SingleJwtMiddleware(MiddlewareMixin):
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if not settings.ENABLE_SINGLE_SESSION:
+            return self.get_response(request)
+
+        if not request.user.is_authenticated:
+            return self.get_response(request)
+
+        # 生成用户的唯一缓存键
+        user_session_key = f"user_session_{request.user.id}"
+
+        # 获取当前会话ID
+        current_session_id = request.session.get('session_id')
+
+        if not current_session_id:
+            # 如果当前会话没有ID,生成一个新的
+            current_session_id = str(uuid.uuid4())
+            request.session['session_id'] = current_session_id
+
+        # 检查缓存中的会话ID
+        cached_session_id = cache.get(user_session_key)
+
+        if cached_session_id and cached_session_id != current_session_id:
+            # 如果缓存的会话ID与当前会话ID不匹配,注销用户
+            logout(request)
+            return JsonResponse({'error': 'You have been logged out due to login from another location'}, status=401)
+
+        # 更新缓存中的会话ID
+        cache.set(user_session_key, current_session_id, timeout=settings.SESSION_COOKIE_AGE)
+
+        return self.get_response(request)
+
+# if IS_SINGLE_TOKEN:  # 保证设备登录的唯一性
+#     if request.request_path[0:9] not in FRONTEND_API_LIST:
+#         jwt_token = request.META.get('HTTP_AUTHORIZATION', None)
+#         if jwt_token and 'JWT' in jwt_token and jwt_token.split('JWT ')[1] != 'null':
+#             errordata = {'msg': '身份认证已经过期，请重新登入', 'code': 4001, 'data': ''}
+#             try:
+#                 user, token = JWTTokenUserAuthentication().authenticate(request)
+#                 redis_conn = get_redis_connection("singletoken")
+#                 k = "lybbn-single-token{}".format(user.id)
+#                 cache_token = redis_conn.get(k)
+#                 if cache_token:
+#                     if not str(token) == str(cache_token):
+#                         return HttpResponse(json.dumps(errordata), content_type='application/json', status=200,
+#                                             charset='utf-8')
+#                 else:
+#                     return HttpResponse(json.dumps(errordata), content_type='application/json', status=200,
+#                                         charset='utf-8')
+#             except Exception as e:
+#                 print(e)
+#                 return HttpResponse(json.dumps(errordata), content_type='application/json', status=200,
+#                                     charset='utf-8')

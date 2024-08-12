@@ -15,7 +15,7 @@ class GenerateTokenSerializer(TokenObtainPairSerializer):
         data = {}
         data['identity'] = user.identity
         data['user_id'] = user.user_id
-        data["user_name"] = user.username
+        data["username"] = user.username
         data['refresh'] = str(refresh)
         data['access'] = str(refresh.access_token)
         return data

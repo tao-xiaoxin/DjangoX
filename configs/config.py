@@ -1,7 +1,6 @@
 # At the top of your settings.py file
 import os
 from dotenv import load_dotenv
-from django.conf import settings
 
 # Load the .env file
 load_dotenv()
@@ -67,3 +66,24 @@ openapi_title = os.getenv("OPENAPI_TITLE", "DjangoX API")
 # ================================================= #
 # 验证码有效时间
 CAPTCHA_EXPIRE_TIME = eval(os.getenv("CAPTCHA_EXPIRE_TIME", 5))
+
+# ================================================= #
+# ****************** simplejwt配置 ***************** #
+# ================================================= #
+
+access_token_time = eval(os.getenv('ACCESS_TOKEN_LIFETIME', '7'))
+refresh_token_time = eval(os.getenv('REFRESH_TOKEN_LIFETIME', '15'))
+
+# ================================================= #
+# ************** 其他配置  ************** #
+# ================================================= #
+API_LOG_ENABLE = eval(os.getenv('API_LOG_ENABLE', 'True'))
+# API_LOG_METHODS = 'ALL' # ['POST', 'DELETE']
+API_LOG_METHODS = ['POST', 'UPDATE', 'DELETE', 'PUT']  # ['POST', 'DELETE']
+API_MODEL_MAP = {
+    "/token/refresh/": "刷新token",
+    "/captcha/refresh/": "刷新验证码",
+    "/login/": "登录",
+    "/signup/": "注册",
+}
+IS_SINGLE_TOKEN = eval(os.getenv("IS_SINGLE_TOKEN", 'False'))  # 是否开启单用户单一地点登录(只有一个人在线上)(默认多地点登录)

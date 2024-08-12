@@ -373,3 +373,9 @@ class SnowflakeIDWorker:
 def getfulldomian(requests):
     host = '{scheme}://{host}'.format(scheme=requests.scheme, host=requests.get_host())
     return host
+
+
+def md5(string):
+    m = hashlib.md5()
+    m.update(string.encode(encoding='utf-8'))
+    return m.hexdigest()
