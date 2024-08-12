@@ -112,6 +112,49 @@ class ApiLoggingMiddleware(MiddlewareMixin):
         return response
 
 
+class SingleTokenMiddleware(MiddlewareMixin):
+    """
+    保证设备登录的唯一性
+    """
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        self.enable = getattr(settings, 'IS_SINGLE_TOKEN', None) or False
+        self.jwt_config = getattr(settings, 'SIMPLE_JWT', None)
+
+    @classmethod
+    def __handle_request(cls, request):
+        request.request_ip = get_request_ip(request)
+        request.request_data = get_request_data(request)
+        request.request_path = get_request_path(request)
+
+    def __handle_token_cache(self, request):
+        if request.request_path[0:9] not in settings.FRONTEND_API_LIST:
+            jwt_token = request.META.get('HTTP_AUTHORIZATION', None)
+            auth_type = self.jwt_config.get('AUTH_HEADER_TYPES', ('Bearer',))[0]
+            if jwt_token and auth_type in jwt_token and jwt_token.split(auth_type)[1] != 'null':
+                error_data = {'msg': '身份认证已经过期，请重新登入！', 'code': 4001, 'data': None}
+                try:
+                    user, token = JWTTokenUserAuthentication().authenticate(request)
+                    redis_conn = get_redis_connection("single_token")
+                    k = "single_token_{}".format(user.user_id)
+                    cache_token = redis_conn.get(k)
+                    if cache_token:
+                        if not str(token) == str(cache_token):
+                            return JsonResponse(error_data, status=200, charset='utf-8')
+                    else:
+                        return JsonResponse(error_data, status=200, charset='utf-8')
+                except Exception as e:
+                    logging.error(e)
+                    return JsonResponse(error_data, status=200, charset='utf-8')
+
+    def process_request(self, request):
+        self.__handle_request(request)
+        if self.enable:
+            if self.jwt_config:
+                return self.__handle_token_cache(request)
+
+
 class StandardJSONMiddleware(MiddlewareMixin):
     """
     标准化JSON响应中间件
@@ -208,59 +251,3 @@ class SignatureMiddleware(MiddlewareMixin):
             return JsonResponse({'error': 'Invalid signature'}, status=400)
 
         return self.get_response(request)
-
-
-class SingleTokenMiddleware(MiddlewareMixin):
-
-    def __call__(self, request):
-        if not settings.ENABLE_SINGLE_SESSION:
-            return self.get_response(request)
-
-        if not request.user.is_authenticated:
-            return self.get_response(request)
-
-        # 生成用户的唯一缓存键
-        user_session_key = f"user_session_{request.user.id}"
-
-        # 获取当前会话ID
-        current_session_id = request.session.get('session_id')
-
-        if not current_session_id:
-            # 如果当前会话没有ID,生成一个新的
-            current_session_id = str(uuid.uuid4())
-            request.session['session_id'] = current_session_id
-
-        # 检查缓存中的会话ID
-        cached_session_id = cache.get(user_session_key)
-
-        if cached_session_id and cached_session_id != current_session_id:
-            # 如果缓存的会话ID与当前会话ID不匹配,注销用户
-            logout(request)
-            return JsonResponse({'error': 'You have been logged out due to login from another location'}, status=401)
-
-        # 更新缓存中的会话ID
-        cache.set(user_session_key, current_session_id, timeout=settings.SESSION_COOKIE_AGE)
-
-        return self.get_response(request)
-
-# if IS_SINGLE_TOKEN:  # 保证设备登录的唯一性
-#     if request.request_path[0:9] not in FRONTEND_API_LIST:
-#         jwt_token = request.META.get('HTTP_AUTHORIZATION', None)
-#         if jwt_token and 'JWT' in jwt_token and jwt_token.split('JWT ')[1] != 'null':
-#             errordata = {'msg': '身份认证已经过期，请重新登入', 'code': 4001, 'data': ''}
-#             try:
-#                 user, token = JWTTokenUserAuthentication().authenticate(request)
-#                 redis_conn = get_redis_connection("singletoken")
-#                 k = "lybbn-single-token{}".format(user.id)
-#                 cache_token = redis_conn.get(k)
-#                 if cache_token:
-#                     if not str(token) == str(cache_token):
-#                         return HttpResponse(json.dumps(errordata), content_type='application/json', status=200,
-#                                             charset='utf-8')
-#                 else:
-#                     return HttpResponse(json.dumps(errordata), content_type='application/json', status=200,
-#                                         charset='utf-8')
-#             except Exception as e:
-#                 print(e)
-#                 return HttpResponse(json.dumps(errordata), content_type='application/json', status=200,
-#                                     charset='utf-8')

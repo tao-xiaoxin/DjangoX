@@ -66,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "utils.middleware.ApiLoggingMiddleware",  # 记录API访问日志中间件
+    "utils.middleware.SingleTokenMiddleware",  # 单用户登录中间件
 ]
 
 ROOT_URLCONF = 'application.urls'

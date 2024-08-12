@@ -87,3 +87,4 @@ API_MODEL_MAP = {
     "/signup/": "注册",
 }
 IS_SINGLE_TOKEN = eval(os.getenv("IS_SINGLE_TOKEN", 'False'))  # 是否开启单用户单一地点登录(只有一个人在线上)(默认多地点登录)
+FRONTEND_API_LIST = ["/captcha/refresh/", "/login/", "/signup/", "/token/refresh/"]  # 前端API接口白名单
