@@ -70,7 +70,7 @@ class ApiLoggingMiddleware(MiddlewareMixin):
             'status': True if response.data.get('code') in [2000, ] else False,
             'json_result': {"code": response.data.get('code'), "msg": response.data.get('msg')},
         }
-        temp_request_modular = ""
+
         if not self.request_modular and settings.API_MODEL_MAP.get(request.request_path, None):
             temp_request_modular = settings.API_MODEL_MAP[request.request_path]
         else:
@@ -210,9 +210,7 @@ class SignatureMiddleware(MiddlewareMixin):
         return self.get_response(request)
 
 
-class SingleJwtMiddleware(MiddlewareMixin):
-    def __init__(self, get_response):
-        self.get_response = get_response
+class SingleTokenMiddleware(MiddlewareMixin):
 
     def __call__(self, request):
         if not settings.ENABLE_SINGLE_SESSION:

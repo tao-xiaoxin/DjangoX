@@ -178,7 +178,7 @@ CACHES = {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',  # 连接选项(默认，不改)
         }
     },
-    "singletoken": {  # jwt单用户登录（确保一个账户只有一个地点登录，后一个会顶掉前一个）
+    "single_token": {  # jwt单用户登录（确保一个账户只有一个地点登录，后一个会顶掉前一个）
         'BACKEND': 'django_redis.cache.RedisCache',  # 缓存后端 Redis
         # 连接Redis数据库(服务器地址)
         # 一主带多从(可以配置多个Redis，写走第一台，读走其他的机器)
@@ -384,7 +384,7 @@ SIMPLE_JWT = {
     "TOKEN_REFRESH_SERIALIZER": "utils.serializers.TokenRefreshSerializer",
 
 }
-
+IS_SINGLE_TOKEN = IS_SINGLE_TOKEN  # 是否开启单用户单一地点登录(只有一个人在线上)(默认多地点登录)
 # ====================================#
 # ****************swagger************#
 # ====================================#
@@ -498,4 +498,3 @@ API_LOG_ENABLE = API_LOG_ENABLE  # 全局控制日志记录
 API_LOG_METHODS = API_LOG_METHODS
 # 日志记录显示的请求模块中文名映射
 API_MODEL_MAP = API_MODEL_MAP
-

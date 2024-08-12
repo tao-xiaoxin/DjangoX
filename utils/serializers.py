@@ -11,6 +11,9 @@ from user.models import Users  # type: ignore
 from rest_framework_simplejwt.serializers import TokenVerifySerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
+from django.conf import settings
+from django_redis import get_redis_connection
+from .request_util import get_request_user
 
 
 class CustomModelSerializer(ModelSerializer):
@@ -114,7 +117,7 @@ class TokenRefreshSerializer(serializers.Serializer):
             refresh.set_exp()
 
             # 将新的刷新令牌添加到数据字典中
-            refresh_data['refresh_token'] = str(refresh)
+            refresh_data['refresh_token'] = str(refresh.access_token)
 
         # 创建一个包含新的访问令牌的数据字典
         data = {
@@ -122,5 +125,23 @@ class TokenRefreshSerializer(serializers.Serializer):
             "msg": "刷新成功!",
             "data": refresh_data
         }
+        # 缓存用户的jwt token
+        user_id = refresh.payload["user_id"]
+        self.handle_token_cache(user_id, refresh_data)
         # 返回包含新的访问令牌和（如果适用）新的刷新令牌的数据字典
         return data
+
+    @staticmethod
+    def handle_token_cache(user_id, data):
+        """
+        缓存用户的jwt token
+        :param user_id: 用户ID
+        :param data: token数据
+        """
+        if settings.IS_SINGLE_TOKEN:
+            redis_conn = get_redis_connection("single_token")
+            k = "single_token_{}".format(user_id)
+            TOKEN_EXPIRE_CONFIG = getattr(settings, 'SIMPLE_JWT', None)
+            if TOKEN_EXPIRE_CONFIG:
+                TOKEN_EXPIRE = TOKEN_EXPIRE_CONFIG['REFRESH_TOKEN_LIFETIME']
+                redis_conn.set(k, data['refresh_token'], TOKEN_EXPIRE)

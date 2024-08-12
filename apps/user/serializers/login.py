@@ -8,6 +8,7 @@ from utils.request_util import save_login_log
 from django.conf import settings
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+from django_redis import get_redis_connection
 
 
 class LoginSerializer(serializers.ModelSerializer):
@@ -82,6 +83,8 @@ class LoginSerializer(serializers.ModelSerializer):
         self.context["data"] = data
         # 记录登录成功日志
         save_login_log(request=request)
+        # 缓存用户的jwt token
+        self.handle_token_cache(user, data)
         return attrs
 
     @staticmethod
@@ -103,3 +106,19 @@ class LoginSerializer(serializers.ModelSerializer):
             raise CustomValidationError("账号/密码不正确！")
 
         return user
+
+    @staticmethod
+    def handle_token_cache(user, data):
+        """
+        缓存用户的jwt token
+        :param user: 用户对象
+        :param data: token数据
+        """
+        # 缓存用户的jwt token
+        if settings.IS_SINGLE_TOKEN:
+            redis_conn = get_redis_connection("single_token")
+            k = "single_token_{}".format(user.user_id)
+            TOKEN_EXPIRE_CONFIG = getattr(settings, 'SIMPLE_JWT', None)
+            if TOKEN_EXPIRE_CONFIG:
+                TOKEN_EXPIRE = TOKEN_EXPIRE_CONFIG['ACCESS_TOKEN_LIFETIME']
+                redis_conn.set(k, data['access_token'], TOKEN_EXPIRE)

@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta
+from django_redis import get_redis_connection
+from django.conf import settings
+
 from application.settings import CAPTCHA_EXPIRE_TIME
 from captcha.models import CaptchaStore
 from rest_framework import serializers
@@ -204,4 +207,22 @@ class SignUpSerializer(serializers.ModelSerializer):
             'refresh_token': str(refresh),
             'access_token': str(refresh.access_token)
         }
+        # 缓存用户的jwt token
+        self.handle_token_cache(user, data)
+
         return data
+
+    @staticmethod
+    def handle_token_cache(user, data):
+        """
+        缓存用户的jwt token
+        :param user: 用户对象
+        :param data: token数据
+        """
+        if settings.IS_SINGLE_TOKEN:
+            redis_conn = get_redis_connection("single_token")
+            k = "single_token_{}".format(user.user_id)
+            TOKEN_EXPIRE_CONFIG = getattr(settings, 'SIMPLE_JWT', None)
+            if TOKEN_EXPIRE_CONFIG:
+                TOKEN_EXPIRE = TOKEN_EXPIRE_CONFIG['ACCESS_TOKEN_LIFETIME']
+                redis_conn.set(k, data['access_token'], TOKEN_EXPIRE)
