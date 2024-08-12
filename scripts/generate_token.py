@@ -1,6 +1,6 @@
-from apps.user.models import Users
+from user.models import Users  # type: ignore
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.core.management.base import BaseCommand
+import argparse
 
 
 class GenerateTokenSerializer(TokenObtainPairSerializer):
@@ -14,30 +14,28 @@ class GenerateTokenSerializer(TokenObtainPairSerializer):
         refresh = super(GenerateTokenSerializer, cls).get_token(user)
         data = {}
         data['identity'] = user.identity
-        data['userId'] = user.id
+        data['user_id'] = user.user_id
+        data["user_name"] = user.username
         data['refresh'] = str(refresh)
         data['access'] = str(refresh.access_token)
         return data
 
 
-class Command(BaseCommand):
+def generate_token(user_id):
     """
     快速生成用户jwt token:
-    python manage.py generate_token 用户ID
+    python manage.py runscript generate_token --script-args <用户ID>
     """
+    try:
+        user = Users.objects.get(user_id=user_id)
+        userinfo = GenerateTokenSerializer.get_token(user)
+        print(userinfo)
+    except Users.DoesNotExist:
+        print("用户不存在")
 
-    def add_arguments(self, parser):
-        parser.add_argument('userid', nargs='*', type=str, )
 
-    def handle(self, *args, **options):
-        userid_list = options.get('userid')
-        if userid_list:
-            userid = userid_list[0]
-            user = Users.objects.filter(id=userid).first()
-            if not user:
-                print("用户不存在")
-                return
-            userinfo = GenerateTokenSerializer.get_token(user)
-            print(userinfo)
-        else:
-            print(f"请输入要生成token的用户ID如：python manage.py generate_token 用户ID")
+def run(*args):
+    parser = argparse.ArgumentParser(description='生成用户JWT Token')
+    parser.add_argument('userid', type=str, help='用户ID')
+    args = parser.parse_args(args[0])
+    generate_token(args.userid)

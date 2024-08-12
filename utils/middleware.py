@@ -6,7 +6,7 @@ import json,re
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
 
-from mysystem.models import OperationLog
+from apps.system.models import OperationLog
 from utils.request_util import get_request_user, get_request_ip, get_request_data, get_request_path, get_os,get_browser, get_verbose_name
 
 from django.http import HttpResponseForbidden,HttpResponse
@@ -14,7 +14,7 @@ from config import ALLOW_FRONTEND,FRONTEND_API_LIST,IS_SINGLE_TOKEN
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication,JWTTokenUserAuthentication
 from rest_framework.views import APIView
-from utils.jsonResponse import SuccessResponse,ErrorResponse
+from .json_response import SuccessResponse,ErrorResponse
 from utils.common import get_parameter_dic
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -30,7 +30,7 @@ from jwt import decode as jwt_decode
 from rest_framework_simplejwt.authentication import AUTH_HEADER_TYPE_BYTES
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import UntypedToken
-
+from django.http import JsonResponse
 
 IS_ALLOW_FRONTEND = ALLOW_FRONTEND
 
@@ -321,3 +321,45 @@ class JwtAuthMiddleware(BaseMiddleware):
 
 def JwtAuthMiddlewareStack(inner):
     return JwtAuthMiddleware(AuthMiddlewareStack(inner))
+
+
+
+class StandardJSONMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # 正常处理请求
+        response = self.get_response(request)
+        return response
+
+    def process_exception(self, request, exception):
+        # 检查异常是否具有我们期望的属性
+        if hasattr(exception, 'code') and hasattr(exception, 'error') and hasattr(exception, 'detail'):
+            # 构建标准的错误响应数据
+            data = {
+                'code': exception.code,
+                'error': exception.error,
+                'detail': exception.detail
+            }
+
+            # 特殊处理 DateOutOfSync 异常
+            if isinstance(exception, DateOutOfSync):
+                data['server_time'] = exception.server_time
+
+            # 根据异常类型设置适当的HTTP状态码
+            status_code = 500  # 默认为500 Internal Server Error
+            if isinstance(exception, HTTP404):
+                status_code = 404
+            elif isinstance(exception, HTTP400):
+                status_code = 400
+            elif isinstance(exception, HTTP401):
+                status_code = 401
+            elif isinstance(exception, HTTP403):
+                status_code = 403
+
+            # 返回JSON格式的响应
+            return JsonResponse(data, status=status_code)
+
+        # 如果不是我们处理的异常类型，返回None让Django继续处理
+        return None

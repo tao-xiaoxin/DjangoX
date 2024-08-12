@@ -3,9 +3,6 @@ from rest_framework.views import APIView
 from utils.json_response import SuccessResponse, ErrorResponse, DetailResponse
 from utils.common import get_parameter_dict, getRandomSet, REGEX_MOBILE
 import re
-from django.db.models import Q, F, Sum
-from rest_framework.serializers import ModelSerializer
-from rest_framework import serializers
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from utils.serializers import CustomModelSerializer
 from utils.viewset import CustomModelViewSet
@@ -146,8 +143,6 @@ class DestroyUserView(APIView):
     post:
     【功能描述】注销账号(标记已注销)</br>
     '''
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user

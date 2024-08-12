@@ -126,7 +126,7 @@ CACHES = {
         'LOCATION': [
             f'{REDIS_URL}/0',
         ],
-        'KEY_PREFIX': 'lybbn',  # 项目名当做文件前缀
+        'KEY_PREFIX': 'djangox',  # 项目名当做文件前缀
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',  # 连接选项(默认，不改)
             'CONNECTION_POOL_KWARGS': {

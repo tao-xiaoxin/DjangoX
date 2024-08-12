@@ -98,4 +98,4 @@ urlpatterns += system_url.urls
 
         else:
             print(f"提示：该命令会把app创建到apps目录中")
-            print(f"请输入要创建的app名称如：python manage.py startapp app名")
+            print(f"请输入要创建的app名称如：python manage.py create_app app名")

@@ -57,7 +57,17 @@ Djangox 是一个基于 Django 的项目模板，旨在快速开发 Django Web �
    ```
    python manage.py runserver
    ```
+## 自定义脚本
 
+### 快速生成用户token
+```bash
+ python manage.py runscript generate_token --script-args <用户ID>
+```
+
+### 在APPS下创建APP 
+```bash
+python manage.py runscript  create_app --script-args <app_name>
+```
 ## 配置
 
 - **密钥**：确保更改“settings.py”中的“SECRET_KEY”以供生产使用。
