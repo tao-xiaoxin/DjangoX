@@ -8,7 +8,7 @@ from django.utils.deprecation import MiddlewareMixin
 from apps.system.models import OperationLog
 from utils.request_util import get_request_user, get_request_ip, get_request_data, get_request_path, get_os, \
     get_browser, get_verbose_name
-
+from typing import Optional
 from django.http import HttpResponseForbidden, HttpResponse
 from rest_framework_simplejwt.authentication import JWTTokenUserAuthentication
 from django_redis import get_redis_connection
@@ -119,40 +119,63 @@ class SingleTokenMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        self.enable = getattr(settings, 'IS_SINGLE_TOKEN', None) or False
-        self.jwt_config = getattr(settings, 'SIMPLE_JWT', None)
+        self.enable = getattr(settings, 'IS_SINGLE_TOKEN', False)
+        self.jwt_config = getattr(settings, 'SIMPLE_JWT', {})
+        self.redis_conn = get_redis_connection("single_token")
 
-    @classmethod
-    def __handle_request(cls, request):
+    @staticmethod
+    def _get_request_info(request):
         request.request_ip = get_request_ip(request)
         request.request_data = get_request_data(request)
         request.request_path = get_request_path(request)
 
-    def __handle_token_cache(self, request):
-        if request.request_path[0:9] not in settings.FRONTEND_API_LIST:
-            jwt_token = request.META.get('HTTP_AUTHORIZATION', None)
-            auth_type = self.jwt_config.get('AUTH_HEADER_TYPES', ('Bearer',))[0]
-            if jwt_token and auth_type in jwt_token and jwt_token.split(auth_type)[1] != 'null':
-                error_data = {'msg': '身份认证已经过期，请重新登入！', 'code': 4001, 'data': None}
-                try:
-                    user, token = JWTTokenUserAuthentication().authenticate(request)
-                    redis_conn = get_redis_connection("single_token")
-                    k = "single_token_{}".format(user.user_id)
-                    cache_token = redis_conn.get(k)
-                    if cache_token:
-                        if not str(token) == str(cache_token):
-                            return JsonResponse(error_data, status=200, charset='utf-8')
-                    else:
-                        return JsonResponse(error_data, status=200, charset='utf-8')
-                except Exception as e:
-                    logging.error(e)
-                    return JsonResponse(error_data, status=200, charset='utf-8')
+    def _get_jwt_token(self, request) -> Optional[str]:
+        jwt_token = request.META.get('HTTP_AUTHORIZATION')
+        if not jwt_token:
+            return None
+
+        auth_type = self.jwt_config.get('AUTH_HEADER_TYPES', ('Bearer',))[0]
+        if auth_type not in jwt_token:
+            return None
+
+        token = jwt_token.split(auth_type)[1].strip()
+        return token if token != 'null' else None
+
+    def _validate_token(self, request, token):
+        try:
+            user, _ = JWTTokenUserAuthentication().authenticate(request)
+            cache_key = f"single_token_{user.user_id}"
+            cached_token = self.redis_conn.get(cache_key)
+
+            if not cached_token or str(token) != str(cached_token):
+                return False
+            return True
+        except Exception as e:
+            logging.error(f"Token validation error: {e}")
+            return False
 
     def process_request(self, request):
-        self.__handle_request(request)
-        if self.enable:
-            if self.jwt_config:
-                return self.__handle_token_cache(request)
+        self._get_request_info(request)
+
+        if not self.enable or not self.jwt_config:
+            return None
+
+        if request.request_path[:9] in settings.FRONTEND_API_LIST:
+            return None
+
+        token = self._get_jwt_token(request)
+        if not token:
+            return None
+
+        if not self._validate_token(request, token):
+            error_data = {
+                'msg': '身份认证已经过期，请重新登入！',
+                'code': 4001,
+                'data': None
+            }
+            return JsonResponse(error_data, status=200, charset='utf-8')
+
+        return None
 
 
 class StandardJSONMiddleware(MiddlewareMixin):
