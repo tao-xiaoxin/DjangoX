@@ -178,6 +178,48 @@ class SingleTokenMiddleware(MiddlewareMixin):
         return None
 
 
+class VerifySignatureMiddleware(MiddlewareMixin):
+    """
+    校验签名中间件,反爬虫
+    """
+
+    def __init__(self, get_response=None):
+        super().__init__(get_response)
+        self.enable = getattr(settings, 'IS_SINGLE_TOKEN', False)
+
+    @staticmethod
+    def _get_request_info(request):
+        request.request_ip = get_request_ip(request)
+        request.request_data = get_request_data(request)
+
+    def _validate_signature(self, request, token):
+        pass
+
+    def process_request(self, request):
+        print(request.META)
+        # self._get_request_info(request)
+
+        if not self.enable:
+            return None
+
+        if request.request_path[:9] in settings.FRONTEND_API_LIST:
+            return None
+
+        # token = self._get_jwt_token(request)
+        # if not token:
+        #     return None
+        #
+        # if not self._validate_token(request, token):
+        #     error_data = {
+        #         'msg': '身份认证已经过期，请重新登入！',
+        #         'code': 4001,
+        #         'data': None
+        #     }
+        #     return JsonResponse(error_data, status=200, charset='utf-8')
+
+        return None
+
+
 class StandardJSONMiddleware(MiddlewareMixin):
     """
     标准化JSON响应中间件
@@ -221,56 +263,3 @@ class StandardJSONMiddleware(MiddlewareMixin):
 
         # 如果不是我们处理的异常类型，返回None让Django继续处理
         return None
-
-
-class SignatureMiddleware(MiddlewareMixin):
-    """
-    校验签名中间件,反爬虫
-    """
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        # 白名单路径,不需要签名验证
-        exempt_paths = ['/api/login', '/api/register']
-        if request.path in exempt_paths:
-            return self.get_response(request)
-
-        # 获取请求头中的签名信息
-        signature = request.headers.get('X-Signature')
-        timestamp = request.headers.get('X-Timestamp')
-        app_key = request.headers.get('X-App-Key')
-
-        if not all([signature, timestamp, app_key]):
-            return JsonResponse({'error': 'Missing signature information'}, status=400)
-
-        # 检查时间戳是否在允许的时间范围内
-        current_time = int(time.time())
-        if abs(current_time - int(timestamp)) > settings.SIGNATURE_EXPIRATION:
-            return JsonResponse({'error': 'Signature expired'}, status=400)
-
-        # 获取 app secret
-        app_secret = settings.APP_SECRETS.get(app_key)
-        if not app_secret:
-            return JsonResponse({'error': 'Invalid app key'}, status=400)
-
-        # 构造签名字符串
-        signature_string = f"{app_key}{timestamp}"
-
-        # 如果是 GET 请求,将查询参数按字母顺序排序后加入签名字符串
-        if request.method == 'GET':
-            params = sorted(request.GET.items())
-            signature_string += ''.join(f"{k}{v}" for k, v in params)
-        # 如果是 POST 请求,将 body 加入签名字符串
-        elif request.method == 'POST':
-            signature_string += request.body.decode()
-
-        # 计算签名
-        calculated_signature = hashlib.md5((signature_string + app_secret).encode()).hexdigest()
-
-        # 验证签名
-        if calculated_signature != signature:
-            return JsonResponse({'error': 'Invalid signature'}, status=400)
-
-        return self.get_response(request)

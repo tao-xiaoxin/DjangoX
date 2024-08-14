@@ -23,7 +23,7 @@ DATABASE_ENGINE = os.getenv("MYSQL_ENGINE", "django.db.backends.mysql")
 # 数据库地址
 DATABASE_HOST = os.getenv("DATABASE_HOST", "127.0.0.1")
 # 数据库端口
-DATABASE_PORT = os.getenv("DATABASE_PORT", "3306")
+DATABASE_PORT = eval(os.getenv("DATABASE_PORT", "3306"))
 # 数据库用户名
 DATABASE_USER = os.getenv("DATABASE_USER", "root")
 # 数据库密码
@@ -33,7 +33,7 @@ DATABASE_NAME = os.getenv("DATABASE_NAME", "django_db")
 # 数据库编码
 DATABASE_CHARSET = os.getenv("DATABASE_CHARSET", "utf8mb4")
 # 数据库长连接时间（默认为0，单位秒）即每次请求都重新连接,debug模式下该值应该写为0 ，mysql默认长连接超时时间为8小时
-DATABASE_CONN_MAX_AGE = os.getenv("DATABASE_CONN_MAX_AGE", "0")  # 推荐120（2分钟），使用 None 则是无限的持久连接（不推荐）。
+DATABASE_CONN_MAX_AGE = eval(os.getenv("DATABASE_CONN_MAX_AGE", "120"))  # 推荐120（2分钟），使用 None 则是无限的持久连接（不推荐）。
 
 # ================================================= #
 # ************** redis 配置  ************** #
@@ -41,7 +41,7 @@ DATABASE_CONN_MAX_AGE = os.getenv("DATABASE_CONN_MAX_AGE", "0")  # 推荐120（2
 
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', '')
 REDIS_HOST = os.getenv('REDIS_HOST', '127.0.0.1')
-REDIS_PORT = os.getenv('REDIS_PORT', '6379')
+REDIS_PORT = eval(os.getenv('REDIS_PORT', '6379'))
 REDIS_URL = f'redis://:{REDIS_PASSWORD or ""}@{REDIS_HOST}:{REDIS_PORT}'
 
 # ================================================= #
