@@ -67,6 +67,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "utils.middleware.ApiLoggingMiddleware",  # 记录API访问日志中间件
     "utils.middleware.SingleTokenMiddleware",  # 单用户登录中间件
+    "utils.middleware.VerifySignatureMiddleware",  # 验证反爬签名验证码
 ]
 
 ROOT_URLCONF = 'application.urls'
@@ -103,11 +104,11 @@ DATABASES = {
         'PASSWORD': DATABASE_PASSWORD,
         'HOST': DATABASE_HOST,
         'PORT': DATABASE_PORT,
-        'CONN_MAX_AGE':DATABASE_CONN_MAX_AGE,
+        'CONN_MAX_AGE': DATABASE_CONN_MAX_AGE,
         'OPTIONS': {
-                    'charset':DATABASE_CHARSET,
-                    'init_command': 'SET default_storage_engine=INNODB', #innodb才支持事务
-                }
+            'charset': DATABASE_CHARSET,
+            'init_command': 'SET default_storage_engine=INNODB',  # innodb才支持事务
+        }
     }
 }
 
@@ -477,6 +478,16 @@ CORS_ALLOW_ALL_ORIGINS = True  # 新版 ACCESS_CONTROL_ALLOW_ORIGIN = '*' ,不�
 # 允许cookie
 # CORS_ALLOW_CREDENTIALS = True  # 指明在跨域访问中，后端是否支持对cookie的操作
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'None'
+
+# ================================================= #
+# ******************* 反爬配置 ******************* #
+# ================================================= #
+# 反爬虫签名验证码
+REQUEST_APP_SECRET = REQUEST_APP_KEY  # 用于生成MTGSIG的APP_SECRET
+REQUEST_APP_KEY = REQUEST_APP_KEY  # 用于生成MTGSIG的APP_KEY
+REQUEST_SECRET_KEY = REQUEST_SECRET_KEY  # 用于生成请求签名的SECRET_KEY
+REQUEST_EXPIRATION = REQUEST_EXPIRATION  # SIGN 缓存时间(秒)
+IS_SIGNATURE_VERIFICATION = IS_SIGNATURE_VERIFICATION  # 是否开启签名验证
 
 # ================================================= #
 # ******************* 其他配置 ******************* #

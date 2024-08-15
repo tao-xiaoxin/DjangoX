@@ -88,3 +88,8 @@ API_MODEL_MAP = {
 }
 IS_SINGLE_TOKEN = eval(os.getenv("IS_SINGLE_TOKEN", 'False'))  # 是否开启单用户单一地点登录(只有一个人在线上)(默认多地点登录)
 FRONTEND_API_LIST = ["/captcha/refresh/", "/login/", "/signup/", "/token/refresh/"]  # 前端API接口白名单
+REQUEST_APP_SECRET = "htgsig3ingpsgs536o7d35putr"  # 用于生成MTGSIG的APP_SECRET
+REQUEST_APP_KEY = 'sk-84Smb5t60wbr3VHphh1cao3sqejljFEC'  # 用于生成MTGSIG的APP_KEY
+REQUEST_SECRET_KEY = "htgsig3ingpsgs536o7d35putr"  # 用于生成请求签名的SECRET_KEY
+REQUEST_EXPIRATION = 86400  # SIGN 缓存时间(秒)
+IS_SIGNATURE_VERIFICATION= eval(os.getenv("IS_SIGNATURE_VERIFICATION", 'False'))  # 是否开启签名验证

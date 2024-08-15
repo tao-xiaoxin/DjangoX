@@ -3,6 +3,7 @@
 """
 @Remark: 公用方法
 """
+import logging
 import os, re
 import random
 import time
@@ -379,3 +380,16 @@ def md5(string):
     m = hashlib.md5()
     m.update(string.encode(encoding='utf-8'))
     return m.hexdigest()
+
+
+def base64_decode(encoded_str):
+    """
+    解码base64编码的字符串
+    :param encoded_str: base64编码的字符串
+    :return: 解码后的字符串
+    """
+    try:
+        return base64.b64decode(encoded_str).decode('utf-8')
+    except Exception as e:
+        logging.error(f"base64 decode error: {e}")
+        raise ValueError("Invalid base64 encoded string")

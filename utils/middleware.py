@@ -6,6 +6,7 @@ import logging
 from django.utils.deprecation import MiddlewareMixin
 
 from apps.system.models import OperationLog
+from .apisecurity import RequestSigServer
 from utils.request_util import get_request_user, get_request_ip, get_request_data, get_request_path, get_os, \
     get_browser, get_verbose_name
 from typing import Optional
@@ -186,80 +187,14 @@ class VerifySignatureMiddleware(MiddlewareMixin):
     def __init__(self, get_response=None):
         super().__init__(get_response)
         self.enable = getattr(settings, 'IS_SINGLE_TOKEN', False)
-
-    @staticmethod
-    def _get_request_info(request):
-        request.request_ip = get_request_ip(request)
-        request.request_data = get_request_data(request)
-
-    def _validate_signature(self, request, token):
-        pass
+        self.req_sig = RequestSigServer()
 
     def process_request(self, request):
-        print(request.META)
-        # self._get_request_info(request)
 
         if not self.enable:
             return None
-
-        if request.request_path[:9] in settings.FRONTEND_API_LIST:
-            return None
-
-        # token = self._get_jwt_token(request)
-        # if not token:
-        #     return None
-        #
-        # if not self._validate_token(request, token):
-        #     error_data = {
-        #         'msg': '身份认证已经过期，请重新登入！',
-        #         'code': 4001,
-        #         'data': None
-        #     }
-        #     return JsonResponse(error_data, status=200, charset='utf-8')
-
-        return None
-
-
-class StandardJSONMiddleware(MiddlewareMixin):
-    """
-    标准化JSON响应中间件
-    """
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        # 正常处理请求
-        response = self.get_response(request)
-        return response
-
-    def process_exception(self, request, exception):
-        # 检查异常是否具有我们期望的属性
-        if hasattr(exception, 'code') and hasattr(exception, 'error') and hasattr(exception, 'detail'):
-            # 构建标准的错误响应数据
-            data = {
-                'code': exception.code,
-                'error': exception.error,
-                'detail': exception.detail
-            }
-
-            # 特殊处理 DateOutOfSync 异常
-            if isinstance(exception, DateOutOfSync):
-                data['server_time'] = exception.server_time
-
-            # 根据异常类型设置适当的HTTP状态码
-            status_code = 500  # 默认为500 Internal Server Error
-            if isinstance(exception, HTTP404):
-                status_code = 404
-            elif isinstance(exception, HTTP400):
-                status_code = 400
-            elif isinstance(exception, HTTP401):
-                status_code = 401
-            elif isinstance(exception, HTTP403):
-                status_code = 403
-
-            # 返回JSON格式的响应
-            return JsonResponse(data, status=status_code)
-
-        # 如果不是我们处理的异常类型，返回None让Django继续处理
-        return None
+        is_valid, message = self.req_sig.verify(request)
+        if not is_valid:
+            data = {"code": 4003, "msg": message, "data": None}
+            return JsonResponse(data, status=200)
+        return self.get_response(request)
