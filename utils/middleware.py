@@ -189,10 +189,18 @@ class VerifySignatureMiddleware(MiddlewareMixin):
         self.enable = getattr(settings, 'IS_SINGLE_TOKEN', False)
         self.req_sig = RequestSigServer()
 
-    def process_request(self, request):
+    @staticmethod
+    def _get_request_info(request):
+        request.request_ip = get_request_ip(request)
+        request.request_data = get_request_data(request)
+        request.request_path = get_request_path(request)
+        return request
 
-        if not self.enable:
+    def process_request(self, request):
+        request = self._get_request_info(request)
+        if not self.enable or (settings.DEBUG and request.request_path in settings.FRONTEND_API_LIST):
             return None
+
         is_valid, message = self.req_sig.verify(request)
         if not is_valid:
             data = {"code": 4003, "msg": message, "data": None}
