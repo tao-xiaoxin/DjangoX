@@ -9,6 +9,7 @@ import hmac
 import logging
 import time
 from functools import wraps
+import fnmatch
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -126,7 +127,7 @@ class RequestSecurity:
             sign_key = headers['X-Request-Sign']  # 推荐使用UUID3
 
             # 步骤2：验证请求URL是否在允许的白名单中
-            if not any(req_url.startswith(pattern) for pattern in settings.CORS_ORIGIN_WHITELIST):
+            if not any(fnmatch.fnmatch(req_url, pattern) for pattern in settings.CORS_ORIGIN_WHITELIST):
                 return False, "Request validation failed"
 
             # 步骤3：验证请求时间戳是否在允许范围内（5分钟内）
