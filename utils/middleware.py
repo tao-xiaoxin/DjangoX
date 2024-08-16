@@ -6,7 +6,7 @@ import logging
 from django.utils.deprecation import MiddlewareMixin
 
 from apps.system.models import OperationLog
-from .apisecurity import RequestSigServer
+from .apisecurity import RequestSecurity
 from utils.request_util import get_request_user, get_request_ip, get_request_data, get_request_path, get_os, \
     get_browser, get_verbose_name
 from typing import Optional
@@ -186,8 +186,8 @@ class VerifySignatureMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        self.enable = getattr(settings, 'IS_SINGLE_TOKEN', False)
-        self.req_sig = RequestSigServer()
+        self.enable = getattr(settings, 'IS_SIGNATURE_VERIFICATION', False)
+        self.req_sig = RequestSecurity()
 
     @staticmethod
     def _get_request_info(request):
