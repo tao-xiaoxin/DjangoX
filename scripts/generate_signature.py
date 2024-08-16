@@ -32,18 +32,18 @@ def encrypt_with_aes(data, key):
 
 
 def calculate_signature(string_to_sign):
-    return hmac.new(APP_SECRET.encode('utf-8'), string_to_sign.encode(), hashlib.sha256).hexdigest()
+    return hmac.new(APP_SECRET.encode('utf-8'), msg=string_to_sign.encode(),
+                    digestmod=hashlib.sha256).hexdigest()
 
 
 def generate_headers(method, path):
     timestamp = str(int(time.time() * 1000))
-    nonce = uuid.uuid4().hex
     sign_key = uuid.uuid4().hex.encode()  # 32 bytes
 
-    string_to_sign = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{nonce}||{method}||{path}"
+    string_to_sign = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{sign_key}||{method}||{path}"
     signature = calculate_signature(string_to_sign)
 
-    auth_string = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{nonce}||{method}||{path}||{base64.b64encode(signature.encode()).decode()}"
+    auth_string = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{sign_key}||{method}||{path}||{base64.b64encode(signature.encode()).decode()}"
     encrypted_auth = encrypt_with_aes(auth_string, sign_key)
 
     headers = {
@@ -70,6 +70,6 @@ def debug_request(method, path):
 
 # 使用示例
 def run():
-    method = input("Enter HTTP method (e.g., GET, POST,PUT): ").strip().upper()
-    path = input("Enter request path (e.g., /api/example): ").strip()
+    method = input("Enter HTTP method (e.g., GET, POST,PUT)>>> ").strip().upper()
+    path = input("Enter request path (e.g., /api/example)>>>").strip()
     debug_request(method, path)
