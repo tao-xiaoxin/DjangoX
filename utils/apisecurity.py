@@ -42,17 +42,19 @@ class RequestSecurity:
         self.app_secret = app_secret
         self.sign_expiration = sign_expiration
 
-    def decrypt_with_aes(self, encrypted_data, bytes_key):
+    def decrypt_with_aes(self, encrypted_data, bytes_aes_key):
         """
         使用AES解密数据
-        :param encrypted_data: 要解密的数据（Base64编码的字符串）
-        :param bytes_key: AES密钥 256 字节
+        :param encrypted_data: 要解密的数据（Base64编码的字符串）type: str
+        :param bytes_aes_key: AES密钥 256 字节 type: bytes
         :return: 解密后的字符串
         """
-        bytes_key = bytes(bytes_key, encoding="utf8")
+        if len(bytes_aes_key) != 32:  # 256位密钥应该是32字节
+            raise ValueError("Invalid key size for AES")
         encrypted_data = base64.b64decode(encrypted_data)
-        iv, encrypted_data = encrypted_data[:16], encrypted_data[16:]
-        cipher = Cipher(algorithms.AES(bytes_key), modes.CBC(iv), backend=default_backend())
+        iv = encrypted_data[:16]  # 提取初始化向量
+        encrypted_data = encrypted_data[16:]  # 提取加密数据
+        cipher = Cipher(algorithms.AES(bytes_aes_key), modes.CBC(iv), backend=default_backend())
         decryptor = cipher.decryptor()
         decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
         return self._unpad(decrypted_data).decode()
@@ -61,11 +63,13 @@ class RequestSecurity:
     def _unpad(s):
         return s[:-ord(s[len(s) - 1:])]
 
-    def decrypt_device_fingerprint(self, encrypted_fingerprint, sign_key):
-        decoded_data = base64.b64decode(encrypted_fingerprint)
-        return self.decrypt_with_aes(decoded_data, sign_key)
+    def decrypt_device_fingerprint(self, encrypted_data, sign_key):
+        """
+        解密设备指纹的方法。
+        """
+        return self.decrypt_with_aes(encrypted_data, sign_key)
 
-    def _build_string_to_sign(self, timestamp, nonce, request_path):
+    def _build_string_to_sign(self, timestamp, nonce, method, request_path):
         """
         构建待签名字符串的方法。
         :param timestamp: 时间戳
@@ -73,7 +77,7 @@ class RequestSecurity:
         :param request_path: 请求路径
         :return: 待签名字符串
         """
-        return f"RefererAuth REQUEST-AUTO-SA||{self.app_key}||{timestamp}||{nonce}||{request_path}"
+        return f"RefererAuth REQUEST-AUTO-SA||{self.app_key}||{timestamp}||{nonce}||{method}||{request_path}"
 
     def calculate_signature(self, string_to_sign):
         """
@@ -146,30 +150,19 @@ class RequestSecurity:
             if not auth_data:
                 return False, "Request validation failed"
 
-            # 步骤6：验证认证头中的各个字段
-            validations = {
-                'referer_auth': 'RefererAuth',
-                'credential': self.app_key,
-                'keyword': 'REQUEST-AUTO-SA',
-                'method': request.method,
-                'req_path': request.path,
-                'time_stamp': req_time
-            }
-            if not all(auth_data.get(key) == value for key, value in validations.items()):
-                return False, "Request validation failed"
-
-            # 步骤7：验证签名
-            string_to_sign = self._build_string_to_sign(req_time, sign_key.hex(), request.method)
+            # 步骤6：验证签名
+            string_to_sign = self._build_string_to_sign(req_time, sign_key.decode(), request.method,
+                                                        request_path=request.path)
             calculated_signature = self.calculate_signature(string_to_sign)
             if not hmac.compare_digest(auth_data['signature_header'], calculated_signature):
                 return False, "Request validation failed"
 
-            # 步骤8：防止重放攻击
-            nonce_key = f"authapi_{sign_key.hex()}"
+            # 步骤7：防止重放攻击
+            nonce_key = f"authapi_{sign_key.decode()}"
             if cache.get(nonce_key):
                 return False, "Request validation failed"
 
-            # 步骤9：所有验证通过，将nonce存入缓存
+            # 步骤8：所有验证通过，将nonce存入缓存
             cache.set(nonce_key, "1", self.sign_expiration)
             return True, None
 

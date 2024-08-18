@@ -17,34 +17,71 @@ from django.conf import settings
 
 # 配置信息
 APP_KEY = settings.REQUEST_APP_KEY
-APP_SECRET = settings.REQUEST_APP_SECRET
 BASE_URL = settings.DOMAIN_HOST
 
 
-def encrypt_with_aes(data, key):
-    iv = os.urandom(16)
-    padder = padding.PKCS7(algorithms.AES.block_size).padder()
-    padded_data = padder.update(data.encode()) + padder.finalize()
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-    encryptor = cipher.encryptor()
-    ct = encryptor.update(padded_data) + encryptor.finalize()
-    return base64.b64encode(iv + ct).decode('utf-8')
+class SignatureGenerator:
+    def __init__(self, sign_key, app_secret=settings.REQUEST_APP_SECRET):
+        """
+        初始化签名生成器
+        :param sign_key: AES密钥 动态生成
+        :param app_secret: APP_SECRET 默认为配置文件中的REQUEST_APP_SECRET
+        """
+        self.aes_key = sign_key
+        self.app_secret = app_secret
 
+    def encrypt_with_aes(self, data, key):
+        """
+        使用AES加密数据
+        :param data: 要加密的数据
+        :param key: AES密钥 256 字节
+        :return:
+        """
+        if len(key) != 32:  # 256位密钥应该是32字节
+            raise ValueError("Invalid key size for AES")
+        iv = os.urandom(16)  # 生���随机的初始化向量
+        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+        padded_data = self._pad(data.encode())
+        encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+        return base64.b64encode(iv + encrypted_data).decode()  # 将IV和加密数据一起返回
 
-def calculate_signature(string_to_sign):
-    return hmac.new(APP_SECRET.encode('utf-8'), msg=string_to_sign.encode(),
-                    digestmod=hashlib.sha256).hexdigest()
+    def _pad(self, s):
+        """
+        填充数据以确保其长度是16字节的倍数
+        :param s:
+        :return:
+        """
+        return s + (16 - len(s) % 16) * chr(16 - len(s) % 16).encode()
+
+    def calculate_signature(self, string_to_sign):
+        """
+        计算签名
+        """
+        hash_sign = hmac.new(self.app_secret.encode('utf-8'), msg=string_to_sign.encode(),
+                             digestmod=hashlib.sha256).hexdigest()
+        print(f"Hash Sign: {hash_sign}")
+        return base64.b64encode(hash_sign.encode()).decode()
+
+    def generate_signature(self, data):
+        encrypted_data = self.encrypt_with_aes(data, self.aes_key)
+
+        print(f"Encrypted Data: {encrypted_data}")
+        return encrypted_data
 
 
 def generate_headers(method, path):
     timestamp = str(int(time.time() * 1000))
-    sign_key = uuid.uuid4().hex.encode()  # 32 bytes
-
-    string_to_sign = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{sign_key}||{method}||{path}"
-    signature = calculate_signature(string_to_sign)
-
-    auth_string = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{sign_key}||{method}||{path}||{base64.b64encode(signature.encode()).decode()}"
-    encrypted_auth = encrypt_with_aes(auth_string, sign_key)
+    nonce = uuid.uuid4().hex
+    sign_key = nonce.encode()  # 32 bytes
+    g = SignatureGenerator(sign_key)
+    string_to_sign = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{nonce}||{method}||{path}"
+    print(f"String to Sign: {string_to_sign}")
+    base64_signature = g.calculate_signature(string_to_sign)
+    print(f"Base64 Signature: {base64_signature}")
+    auth_string = f"RefererAuth REQUEST-AUTO-SA||{APP_KEY}||{timestamp}||{nonce}||{method}||{path}||{base64_signature}"
+    print(f"Auth String: {auth_string}")
+    encrypted_auth = g.generate_signature(data=auth_string)
 
     headers = {
         'Referer': BASE_URL,
