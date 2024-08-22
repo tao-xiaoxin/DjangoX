@@ -144,6 +144,8 @@ urlpatterns += url.urls
 
     def _get_serializers_content(self):
         return """from rest_framework import serializers
+from utils.serializers import CustomModelSerializer
+from utils.validator import CustomValidationError
 from .models import *
 
 # Create your serializers here.
