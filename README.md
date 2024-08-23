@@ -84,7 +84,53 @@ python manage.py runscript create_app --script-args <app_name>
 
 ## 🤝 贡献
 
-我们欢迎所有形式的贡献！无论是新功能、bug 修复还是文档改进。请查看我们的 [贡献指南](CONTRIBUTING.md) 了解更多信息。
+我们欢迎所有形式的贡献！无论是新功能、bug 修复还是文档改进。请按照以下步骤提交您的贡献：
+
+1. Fork 本仓库
+2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交您的改动 (`git commit -m 'Add some AmazingFeature'`)
+4. 将您的改动推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启一个 Pull Request
+
+### Commit 指南
+
+我们使用 [约定式提交](https://www.conventionalcommits.org/zh-hans/v1.0.0/) 规范来使 commit 信息更加规范和易读。每个 commit 消息都应该遵循以下格式：
+
+```
+<类型>[可选的作用域]: <描述>
+
+[可选的正文]
+
+[可选的脚注]
+```
+
+类型可以是以下之一：
+
+- `feat`: 新功能
+- `fix`: 修复 bug
+- `docs`: 文档更新
+- `style`: 代码格式修改，不影响代码含义的更改（空格、格式化、缺少分号等）
+- `refactor`: 代码重构（既不修复错误也不添加功能）
+- `perf`: 性能优化
+- `test`: 添加缺失的测试或更正现有的测试
+- `chore`: 对构建过程或辅助工具和库的更改（例如文档生成）
+
+例如：
+
+```
+feat(auth): 添加用户登录功能
+
+实现了基于 JWT 的用户登录系统，包括：
+- 用户名和密码验证
+- JWT token 生成
+- 刷新 token 机制
+
+Closes #123
+```
+
+请确保您的 commit 消息清晰、简洁，并准确描述了您所做的更改。这将帮助其他贡献者更好地理解您的工作，并使项目维护变得更加容易。
+
+更多详细信息，请查看我们的 [贡献指南](CONTRIBUTING.md)。
 
 ## 📄 许可证
 
